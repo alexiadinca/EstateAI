@@ -7,7 +7,12 @@
         Almost done. We sent a confirmation link to <strong>{{ email }}</strong>. Open it, then sign
         in.
       </p>
-      <a class="button button--primary" routerLink="/sign-in">Go to sign in</a>
+      <a
+        class="button button--primary"
+        routerLink="/sign-in"
+        [queryParams]="{ returnUrl: returnUrl() }"
+        >Go to sign in</a
+      >
     } @else {
       <p class="auth-intro">Save property analyses and return to them at any time.</p>
 
@@ -111,7 +116,10 @@
         </button>
       </form>
 
-      <p class="auth-switch">Already have an account? <a routerLink="/sign-in">Sign in</a></p>
+      <p class="auth-switch">
+        Already have an account?
+        <a routerLink="/sign-in" [queryParams]="{ returnUrl: returnUrl() }">Sign in</a>
+      </p>
     }
   </div>
 </section>

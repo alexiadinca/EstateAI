@@ -119,4 +119,23 @@
       border-color: var(--color-primary);
     }
   }
+
+  // Light button for espresso backgrounds.
+  &--light {
+    color: var(--color-espresso);
+    background: var(--color-background);
+
+    &:hover:not(:disabled) {
+      background: var(--color-surface);
+    }
+
+    &:focus-visible {
+      outline-color: var(--color-focus-on-dark);
+    }
+  }
+
+  &--large {
+    padding: var(--space-3) var(--space-6);
+    font-size: 1.0625rem;
+  }
 }

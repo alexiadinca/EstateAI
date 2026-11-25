@@ -7,7 +7,13 @@ import {
   UrlTree,
 } from '@angular/router';
 
-import { redirectSignedInUser, requireSignIn, safeReturnUrl, SIGNED_IN_HOME } from './auth.guards';
+import {
+  isOnProtectedPage,
+  redirectSignedInUser,
+  requireSignIn,
+  safeReturnUrl,
+  SIGNED_IN_HOME,
+} from './auth.guards';
 import { AuthService } from './auth.service';
 
 function runGuard(guard: typeof requireSignIn, signedIn: boolean, url = '/account') {
@@ -44,6 +50,35 @@ describe('redirectSignedInUser', () => {
 
   it('lets a visitor open the sign-in form', async () => {
     expect(await runGuard(redirectSignedInUser, false)).toBe(true);
+  });
+});
+
+describe('isOnProtectedPage', () => {
+  async function openPage(url: string): Promise<Router> {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([
+          { path: '', children: [] },
+          {
+            path: 'analyses',
+            canActivate: [() => true, requireSignIn],
+            children: [{ path: 'new', children: [] }],
+          },
+        ]),
+        { provide: AuthService, useValue: { ready: Promise.resolve(), isSignedIn: () => true } },
+      ],
+    });
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl(url);
+    return router;
+  }
+
+  it('recognises a page under a route that requires sign-in', async () => {
+    expect(isOnProtectedPage(await openPage('/analyses/new'))).toBe(true);
+  });
+
+  it('recognises a public page', async () => {
+    expect(isOnProtectedPage(await openPage('/'))).toBe(false);
   });
 });
 

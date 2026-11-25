@@ -15,6 +15,13 @@
     }
   </header>
 
+  @if (current.status === 'loaded' && refreshFailed()) {
+    <p class="alert alert--notice" role="status">
+      The list could not be updated automatically. It shows your analyses as of
+      {{ current.loadedAt | date: 'HH:mm' }}, and EstateAI will try again shortly.
+    </p>
+  }
+
   @if (current.status === 'loading') {
     <p class="muted" role="status">Loading your analyses…</p>
   } @else if (current.status === 'error') {

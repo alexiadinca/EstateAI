@@ -1,9 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthFailure } from '../../../core/auth/auth-errors';
-import { SIGNED_IN_HOME } from '../../../core/auth/auth.guards';
+import { safeReturnUrl } from '../../../core/auth/auth.guards';
 import { AuthService } from '../../../core/auth/auth.service';
 import { containsLetterAndDigit, notBlank, passwordsMatch } from '../../../shared/validators';
 
@@ -21,6 +21,9 @@ type RegisterField = 'firstName' | 'lastName' | 'email' | 'password' | 'confirmP
 export class Register {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+
+  /** Page to open after registration, for example Analyze a property (from the query string). */
+  readonly returnUrl = input<string | null>(null);
 
   protected readonly minimumPasswordLength = MINIMUM_PASSWORD_LENGTH;
 
@@ -75,7 +78,7 @@ export class Register {
         password,
       });
       if (outcome === 'signed-in') {
-        await this.router.navigateByUrl(SIGNED_IN_HOME);
+        await this.router.navigateByUrl(safeReturnUrl(this.returnUrl()));
       } else {
         this.confirmationSentTo.set(email.trim());
       }

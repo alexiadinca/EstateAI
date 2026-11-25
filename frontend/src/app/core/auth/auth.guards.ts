@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from './auth.service';
 
@@ -17,6 +17,18 @@ export const requireSignIn: CanActivateFn = async (_route, state) => {
   }
   return router.createUrlTree(['/sign-in'], { queryParams: { returnUrl: state.url } });
 };
+
+/** True when the page on screen, or one of its parent routes, requires sign-in. */
+export function isOnProtectedPage(router: Router): boolean {
+  let route: ActivatedRouteSnapshot | null = router.routerState.snapshot.root;
+  while (route) {
+    if (route.routeConfig?.canActivate?.includes(requireSignIn)) {
+      return true;
+    }
+    route = route.firstChild;
+  }
+  return false;
+}
 
 /** Keeps signed-in users away from the sign-in and registration pages. */
 export const redirectSignedInUser: CanActivateFn = async () => {
