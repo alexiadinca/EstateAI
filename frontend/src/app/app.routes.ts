@@ -1,9 +1,14 @@
 import { Routes } from '@angular/router';
 
-import { redirectSignedInUser, requireSignIn, SIGNED_IN_HOME } from './core/auth/auth.guards';
+import { redirectSignedInUser, requireSignIn } from './core/auth/auth.guards';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: SIGNED_IN_HOME },
+  {
+    path: '',
+    pathMatch: 'full',
+    title: 'EstateAI | Property valuation and investment analysis',
+    loadComponent: () => import('./features/home/home').then((m) => m.Home),
+  },
   {
     path: 'sign-in',
     title: 'Sign in | EstateAI',
@@ -48,5 +53,5 @@ export const routes: Routes = [
     canActivate: [requireSignIn],
     loadComponent: () => import('./features/account/account').then((m) => m.Account),
   },
-  { path: '**', redirectTo: SIGNED_IN_HOME },
+  { path: '**', redirectTo: '' },
 ];

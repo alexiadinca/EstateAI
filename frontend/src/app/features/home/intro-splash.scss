@@ -1,0 +1,126 @@
+// Timeline: the house is drawn (0 to 0.9 s), the price line rises, the wordmark and tagline
+// appear, and from 2.1 s the whole screen lifts away. The overlay's own animation ending
+// tells the component that the intro is over.
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-on-dark);
+  background:
+    radial-gradient(circle at 50% 42%, rgb(198 167 142 / 16%), transparent 55%),
+    var(--color-espresso);
+  cursor: pointer;
+  animation: intro-exit 0.65s cubic-bezier(0.7, 0, 0.3, 1) 2.1s forwards;
+}
+
+.intro__content {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.intro__mark {
+  width: 4.5rem;
+  height: 4.5rem;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.intro__house,
+.intro__trend {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.intro__house {
+  stroke: var(--color-text-on-dark);
+  stroke-width: 2.4;
+  animation: intro-draw 0.9s ease-out forwards;
+}
+
+.intro__trend {
+  stroke: var(--color-accent);
+  stroke-width: 2.6;
+  animation: intro-draw 0.55s ease-out 0.75s forwards;
+}
+
+.intro__dot {
+  fill: var(--color-accent);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: intro-pop 0.35s ease-out 1.25s forwards;
+}
+
+.intro__wordmark {
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 7vw, 3.75rem);
+  letter-spacing: 0.02em;
+  opacity: 0;
+  animation: intro-rise 0.7s ease-out 0.45s forwards;
+}
+
+.intro__rule {
+  width: 7rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  animation: intro-grow 0.6s ease-out 1s forwards;
+}
+
+.intro__tagline {
+  color: var(--color-text-on-dark-muted);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: intro-rise 0.6s ease-out 1.2s forwards;
+}
+
+@keyframes intro-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes intro-pop {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes intro-grow {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes intro-exit {
+  to {
+    opacity: 0;
+    transform: translateY(-4%);
+    visibility: hidden;
+  }
+}

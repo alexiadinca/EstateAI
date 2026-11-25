@@ -2,7 +2,7 @@
 
 <header class="site-header" [class.site-header--scrolled]="scrolled()">
   <div class="site-header__inner">
-    <a class="wordmark" [routerLink]="auth.isSignedIn() ? signedInHome : '/sign-in'">EstateAI</a>
+    <a class="wordmark" routerLink="/">EstateAI</a>
 
     @if (auth.isSignedIn()) {
       <nav class="site-nav" aria-label="Main">
@@ -24,6 +24,17 @@
           >{{ auth.userEmail() }}</a
         >
         <button class="session__sign-out" type="button" (click)="signOut()">Sign out</button>
+      </div>
+    } @else {
+      <div class="session">
+        <a
+          class="session__link"
+          routerLink="/sign-in"
+          routerLinkActive="session__link--active"
+          ariaCurrentWhenActive="page"
+          >Sign in</a
+        >
+        <a class="session__register" routerLink="/register">Create account</a>
       </div>
     }
   </div>

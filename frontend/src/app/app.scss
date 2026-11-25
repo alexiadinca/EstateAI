@@ -119,7 +119,19 @@
   }
 }
 
-.session__sign-out {
+// Sign-in link for visitors; unlike the account email it stays visible on small screens.
+.session__link {
+  color: var(--color-text-on-dark-muted);
+  text-decoration: none;
+
+  &:hover,
+  &--active {
+    color: var(--color-text-on-dark);
+  }
+}
+
+.session__sign-out,
+.session__register {
   padding: var(--space-2) var(--space-4);
   font: inherit;
   color: var(--color-text-on-dark);
@@ -127,6 +139,7 @@
   border: var(--border-width) solid var(--color-accent);
   border-radius: var(--radius-sm);
   cursor: pointer;
+  text-decoration: none;
   transition: background-color 0.2s ease;
 
   &:hover {
@@ -173,7 +186,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .site-header,
-  .session__sign-out {
+  .session__sign-out,
+  .session__register {
     transition: none;
   }
 }

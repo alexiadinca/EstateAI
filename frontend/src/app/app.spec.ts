@@ -33,10 +33,18 @@ describe('App shell', () => {
     expect(page.querySelector('.site-footer')?.textContent).toContain('EstateAI');
   });
 
-  it('hides the sign-out button for visitors', () => {
+  it('links the wordmark to the home page', () => {
+    const page = renderShell(true);
+
+    expect(page.querySelector('.site-header .wordmark')?.getAttribute('href')).toBe('/');
+  });
+
+  it('shows sign-in and registration links instead of sign-out for visitors', () => {
     const page = renderShell(false);
 
     expect(page.querySelector('.session__sign-out')).toBeNull();
+    expect(page.querySelector('.session__link')?.getAttribute('href')).toBe('/sign-in');
+    expect(page.querySelector('.session__register')?.getAttribute('href')).toBe('/register');
   });
 
   it('shows navigation, the signed-in email and a sign-out button', () => {

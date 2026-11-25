@@ -1,0 +1,104 @@
+@if (introVisible()) {
+  <app-intro-splash (finished)="endIntro()" />
+}
+
+<div class="home" [class.home--after-intro]="introPlayed">
+  <section class="hero" aria-labelledby="home-title">
+    <div class="hero__text">
+      <span class="eyebrow enter">Property valuation and investment decision support</span>
+      <h1 id="home-title" class="hero__title enter">
+        Know where an asking price stands before you make an offer.
+      </h1>
+      <p class="hero__lead enter">
+        EstateAI turns a property listing into a saved, reviewable analysis. It compares the asking
+        price with a reference price estimated from listing data, so you can negotiate with
+        evidence.
+      </p>
+
+      <div class="hero__actions enter">
+        <a class="button button--primary button--large" [routerLink]="startUrl">Start analyzing</a>
+        @if (auth.isSignedIn()) {
+          <a class="button button--secondary button--large" routerLink="/analyses">My analyses</a>
+        } @else {
+          <a
+            class="button button--secondary button--large"
+            routerLink="/register"
+            [queryParams]="{ returnUrl: startUrl }"
+            >Create an account</a
+          >
+        }
+      </div>
+      @if (!auth.isSignedIn()) {
+        <p class="hero__note enter">You will be asked to sign in or create an account first.</p>
+      }
+    </div>
+
+    <figure class="preview enter">
+      <div class="preview__card">
+        <span class="preview__badge">Illustrative example</span>
+        <p class="preview__headline">
+          The asking price is 13.64% above the estimated reference price.
+        </p>
+        <dl class="preview__figures">
+          <div>
+            <dt>Asking price</dt>
+            <dd>€100,000</dd>
+          </div>
+          <div>
+            <dt>Reference estimate</dt>
+            <dd>€88,000</dd>
+          </div>
+          <div>
+            <dt>Difference</dt>
+            <dd>+€12,000</dd>
+          </div>
+        </dl>
+      </div>
+      <figcaption class="preview__caption">
+        Example figures that show the layout of a completed analysis. They are not a live estimate.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="band" aria-labelledby="questions-title">
+    <div class="band__inner">
+      <span class="eyebrow">Why EstateAI</span>
+      <h2 id="questions-title" class="band__title">Three questions every buyer asks</h2>
+      <ul class="questions" role="list">
+        @for (item of questions; track item.question) {
+          <li class="card questions__item reveal">
+            <h3 class="questions__title">{{ item.question }}</h3>
+            <p class="muted">{{ item.answer }}</p>
+            <span class="questions__status">{{ item.status }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="band band--tinted" aria-labelledby="tutorial-title">
+    <div class="band__inner">
+      <span class="eyebrow">How it works</span>
+      <h2 id="tutorial-title" class="band__title">Analyze a property in six steps</h2>
+      <ol class="steps" role="list">
+        @for (step of steps; track step.title; let number = $index) {
+          <li class="steps__item reveal">
+            <span class="steps__number" aria-hidden="true">{{ number + 1 }}</span>
+            <div>
+              <h3 class="steps__title">{{ step.title }}</h3>
+              <p class="muted">{{ step.description }}</p>
+            </div>
+          </li>
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section class="closing" aria-labelledby="closing-title">
+    <div class="closing__inner reveal">
+      <h2 id="closing-title" class="closing__title">Ready to look at a property?</h2>
+      <p class="closing__text">Paste a listing link or start with an empty form.</p>
+      <a class="button button--light button--large" [routerLink]="startUrl">Start analyzing</a>
+    </div>
+  </section>
+</div>
