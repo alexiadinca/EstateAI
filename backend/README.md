@@ -4,11 +4,17 @@ FastAPI service for EstateAI. Dependencies are managed with [uv](https://docs.as
 
 ## Setup
 
+On a new computer, run `setup.ps1` from the project root (see the main README). To set up only
+the backend:
+
 ```powershell
 cd backend
 copy .env.example .env
 uv sync
 ```
+
+`requirements.txt` is generated from `uv.lock` for installations with `pip`; `uv.lock` remains
+the source of truth.
 
 ## Database
 
