@@ -1,0 +1,28 @@
+// Layout shared by the sign-in and registration pages.
+
+.auth-page {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-7) var(--space-4);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 28rem;
+  display: grid;
+  gap: var(--space-5);
+
+  h1 {
+    font-size: var(--font-size-2xl);
+  }
+}
+
+.auth-intro,
+.auth-switch {
+  color: var(--color-text-muted);
+}
+
+.auth-switch {
+  font-size: var(--font-size-sm);
+  text-align: center;
+}

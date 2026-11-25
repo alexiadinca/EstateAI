@@ -1,0 +1,52 @@
+.account-page {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-4);
+
+  h1 {
+    font-size: var(--font-size-2xl);
+  }
+}
+
+.account-status {
+  color: var(--color-text-muted);
+}
+
+.account-card {
+  display: grid;
+  gap: var(--space-4);
+
+  h2 {
+    font-size: var(--font-size-lg);
+  }
+}
+
+.account-details {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+
+  div {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: var(--border-width) solid var(--color-border);
+  }
+
+  div:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  dt {
+    color: var(--color-text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 500;
+  }
+}

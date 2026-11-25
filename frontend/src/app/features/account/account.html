@@ -1,0 +1,40 @@
+<section class="account-page">
+  @let current = state();
+
+  @if (current.status === 'loading') {
+    <p class="account-status" role="status">Loading your account…</p>
+  } @else if (current.status === 'error') {
+    <div class="card account-card">
+      <p class="alert alert--error" role="alert">{{ current.message }}</p>
+      <button class="button button--secondary" type="button" (click)="loadProfile()">
+        Try again
+      </button>
+    </div>
+  } @else {
+    <h1>
+      @if (current.profile.first_name) {
+        Welcome, {{ current.profile.first_name }}
+      } @else {
+        Welcome
+      }
+    </h1>
+
+    <div class="card account-card">
+      <h2>Your account</h2>
+      <dl class="account-details">
+        <div>
+          <dt>Name</dt>
+          <dd>{{ fullName() ?? 'Not provided' }}</dd>
+        </div>
+        <div>
+          <dt>Email</dt>
+          <dd>{{ current.profile.email }}</dd>
+        </div>
+        <div>
+          <dt>Member since</dt>
+          <dd>{{ current.profile.registered_at | date: 'd MMMM y' }}</dd>
+        </div>
+      </dl>
+    </div>
+  }
+</section>

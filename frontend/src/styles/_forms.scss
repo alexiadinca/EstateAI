@@ -1,0 +1,115 @@
+// Shared form, card and button styles used across EstateAI screens.
+// Forms and cards stay opaque so that values remain easy to read.
+
+.card {
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-6);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.field-row {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.field-label {
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+}
+
+.field-hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.field-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-3);
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+
+  &:hover {
+    border-color: var(--color-accent);
+  }
+
+  &[aria-invalid='true'] {
+    border-color: var(--color-error);
+  }
+}
+
+.field-error {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+}
+
+.alert {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+
+  &--error {
+    color: var(--color-error);
+    background: var(--color-error-surface);
+    border: var(--border-width) solid var(--color-error);
+  }
+
+  &--success {
+    color: var(--color-success);
+    background: var(--color-success-surface);
+    border: var(--border-width) solid var(--color-success);
+  }
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  font: inherit;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: var(--border-width) solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+
+    &:hover:not(:disabled) {
+      background: var(--color-primary-hover);
+    }
+  }
+
+  &--secondary {
+    color: var(--color-primary);
+    background: transparent;
+    border-color: var(--color-accent);
+
+    &:hover:not(:disabled) {
+      border-color: var(--color-primary);
+    }
+  }
+}

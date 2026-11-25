@@ -1,0 +1,61 @@
+// EstateAI design tokens. Components use these custom properties instead of raw values,
+// so the visual identity can be adjusted in one place.
+
+:root {
+  // Surfaces
+  --color-background: #f6f1e9;
+  --color-surface: #fffcf7;
+  --color-espresso: #38271f;
+  --color-espresso-glass: rgb(56 39 31 / 88%);
+
+  // Text
+  --color-text: #30251f;
+  --color-text-muted: #6b5a4e;
+  --color-text-on-dark: #f6f1e9;
+  --color-text-on-dark-muted: #d9c8b8;
+
+  // Actions and accents
+  --color-primary: #704a35;
+  --color-primary-hover: #5c3b2a;
+  --color-on-primary: #fffcf7;
+  --color-accent: #c6a78e;
+  --color-border: #e2d5c8;
+
+  // Feedback
+  --color-error: #9b2c1f;
+  --color-error-surface: #fbece8;
+  --color-success: #2f6b45;
+  --color-success-surface: #eaf4ed;
+
+  // Keyboard focus: visible on light surfaces and on the espresso header.
+  --color-focus: #704a35;
+  --color-focus-on-dark: #e8d3bf;
+
+  // Typography
+  --font-serif: 'DM Serif Text', Georgia, 'Times New Roman', serif;
+  --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.75rem;
+  --font-size-2xl: 2.25rem;
+
+  // Spacing scale
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  // Shape and depth
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --border-width: 1px;
+  --shadow-card: 0 1px 2px rgb(48 37 31 / 6%), 0 8px 24px rgb(48 37 31 / 6%);
+
+  // Layout
+  --content-max-width: 1120px;
+}
