@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes import analyses, health, users
+from app.api.routes import analyses, extractions, health, users
 from app.core.config import get_settings
 from app.db.session import DatabaseNotConfiguredError
 
@@ -44,6 +44,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(users.router)
     app.include_router(analyses.router)
+    app.include_router(extractions.router)
 
     return app
 

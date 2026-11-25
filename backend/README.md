@@ -29,6 +29,22 @@ uv run uvicorn app.main:app --reload
 - Health check: http://127.0.0.1:8000/health
 - Interactive API documentation: http://127.0.0.1:8000/docs
 
+## Listing import
+
+`POST /extractions` proposes property details from a listing link or pasted listing text.
+Nothing is saved; the user reviews the values first.
+
+| Input | How it is read |
+| --- | --- |
+| storia.ro link | Structured page data, then the description fills the gaps |
+| olx.ro link | Structured page data, then the title and description fill the gaps |
+| Pasted text (any website) | Rule-based parser for Romanian listing text |
+
+imobiliare.ro blocks automated access with a captcha service, so its listings are imported
+by pasting their text. Only one user-provided page is fetched per request: https only, supported
+domains only, every redirect checked, private network addresses refused, 10 second timeout and
+6 MB size limit. The code is in `app/extraction/`.
+
 ## Authentication
 
 Protected endpoints expect a Supabase access token in the `Authorization: Bearer <token>`

@@ -136,3 +136,73 @@ def test_unsupported_city_is_rejected(api, test_users):
     response = api(owner).post("/analyses", json=apartment_payload(999999))
 
     assert response.status_code == 422
+
+
+def test_pasted_listing_text_proposes_values_without_saving(api, test_users, db_session):
+    owner, _ = test_users
+    text = (
+        "Vand apartament 2 camere in Craiova, zona Rogerius, 54 mp utili, etaj 3/4. "
+        "Pret 92.000 euro."
+    )
+
+    response = api(owner).post("/extractions", json={"text": text})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["input_source"] == "listing_text"
+    assert body["values"]["city_id"] == craiova_id(db_session)
+    assert body["values"]["rooms"] == 2
+    assert body["values"]["asking_price"] == 92000
+    assert body["provenance"]["rooms"] == "description"
+    assert api(owner).get("/analyses").json() == []
+
+
+def test_unsupported_listing_link_is_rejected_with_an_explanation(api, test_users):
+    owner, _ = test_users
+
+    response = api(owner).post(
+        "/extractions", json={"url": "https://www.imobiliare.ro/oferta/apartament-123"}
+    )
+
+    assert response.status_code == 422
+    assert "paste the listing text" in response.json()["detail"]
+
+
+def test_imported_listing_keeps_its_source_and_field_origins(api, test_users, db_session):
+    owner, _ = test_users
+    payload = apartment_payload(
+        craiova_id(db_session),
+        input_source="listing_url",
+        source={
+            "site": "storia.ro",
+            "url": "https://www.storia.ro/ro/oferta/apartament-IDabc",
+            "title": "Apartament 2 camere",
+            "observed_at": "2026-11-25T10:00:00Z",
+            "latitude": 44.32,
+            "longitude": 23.79,
+        },
+        field_provenance={"rooms": "listing", "floor": "description", "asking_price": "corrected"},
+    )
+
+    created = api(owner).post("/analyses", json=payload)
+    assert created.status_code == 201
+    reopened = api(owner).get(f"/analyses/{created.json()['analysis_id']}").json()
+
+    assert reopened["input_source"] == "listing_url"
+    assert reopened["source"]["url"] == "https://www.storia.ro/ro/oferta/apartament-IDabc"
+    assert reopened["field_provenance"] == {
+        "rooms": "listing",
+        "floor": "description",
+        "asking_price": "corrected",
+    }
+
+
+def test_saved_source_link_must_come_from_a_supported_website(api, test_users, db_session):
+    owner, _ = test_users
+    payload = apartment_payload(
+        craiova_id(db_session),
+        input_source="listing_url",
+        source={"url": "https://attacker.example/listing", "observed_at": "2026-11-25T10:00:00Z"},
+    )
+
+    assert api(owner).post("/analyses", json=payload).status_code == 422

@@ -131,25 +131,35 @@
     <div class="detail-grid">
       <section class="card" aria-labelledby="details-heading">
         <h2 id="details-heading" class="section-title card-title">Confirmed details</h2>
+        @if (analysis.input_source !== 'manual_entry') {
+          <p class="provenance-note">
+            Labels show which values were read from the listing or its description, and which you
+            corrected. Unlabelled values were entered by you.
+          </p>
+        }
         <dl class="detail-list detail-list--single">
           <div>
-            <dt>Location</dt>
+            <dt>Location<app-origin-tag [origin]="analysis.field_provenance.neighborhood" /></dt>
             <dd>{{ property.neighborhood }}, {{ property.city }}</dd>
           </div>
           <div>
-            <dt>Property type</dt>
+            <dt>
+              Property type<app-origin-tag [origin]="analysis.field_provenance.property_type" />
+            </dt>
             <dd>{{ property.property_type === 'house' ? 'House' : 'Apartment' }}</dd>
           </div>
           <div>
-            <dt>Usable area</dt>
+            <dt>
+              Usable area<app-origin-tag [origin]="analysis.field_provenance.usable_area_m2" />
+            </dt>
             <dd>{{ property.usable_area_m2 | number: '1.0-2' }} m²</dd>
           </div>
           <div>
-            <dt>Rooms</dt>
+            <dt>Rooms<app-origin-tag [origin]="analysis.field_provenance.rooms" /></dt>
             <dd>{{ property.rooms }}</dd>
           </div>
           <div>
-            <dt>Floor</dt>
+            <dt>Floor<app-origin-tag [origin]="analysis.field_provenance.floor" /></dt>
             <dd [class.not-stated]="property.floor === null">
               {{ floorLabel(property.property_type, property.floor) }}
             </dd>
@@ -157,31 +167,36 @@
           <div>
             <dt>
               {{ property.property_type === 'house' ? 'Number of floors' : 'Floors in building' }}
+              <app-origin-tag [origin]="analysis.field_provenance.total_floors" />
             </dt>
             <dd [class.not-stated]="property.total_floors === null">
               {{ property.total_floors ?? notStated }}
             </dd>
           </div>
           <div>
-            <dt>Construction year</dt>
+            <dt>
+              Construction year<app-origin-tag
+                [origin]="analysis.field_provenance.construction_year"
+              />
+            </dt>
             <dd [class.not-stated]="property.construction_year === null">
               {{ property.construction_year ?? notStated }}
             </dd>
           </div>
           <div>
-            <dt>Structure</dt>
+            <dt>Structure<app-origin-tag [origin]="analysis.field_provenance.structure" /></dt>
             <dd [class.not-stated]="!property.structure">
               {{ property.structure ? structureLabels[property.structure] : notStated }}
             </dd>
           </div>
           <div>
-            <dt>Condition</dt>
+            <dt>Condition<app-origin-tag [origin]="analysis.field_provenance.condition" /></dt>
             <dd [class.not-stated]="!property.condition">
               {{ property.condition ? conditionLabels[property.condition] : notStated }}
             </dd>
           </div>
           <div>
-            <dt>Lift</dt>
+            <dt>Lift<app-origin-tag [origin]="analysis.field_provenance.has_elevator" /></dt>
             <dd [class.not-stated]="property.has_elevator === null">
               {{
                 property.property_type === 'house'
@@ -191,13 +206,13 @@
             </dd>
           </div>
           <div>
-            <dt>Balcony</dt>
+            <dt>Balcony<app-origin-tag [origin]="analysis.field_provenance.has_balcony" /></dt>
             <dd [class.not-stated]="property.has_balcony === null">
               {{ amenityLabel(property.has_balcony) }}
             </dd>
           </div>
           <div>
-            <dt>Parking</dt>
+            <dt>Parking<app-origin-tag [origin]="analysis.field_provenance.has_parking" /></dt>
             <dd [class.not-stated]="property.has_parking === null">
               {{ amenityLabel(property.has_parking) }}
             </dd>
@@ -214,8 +229,44 @@
           </div>
           <div>
             <dt>Input</dt>
-            <dd>Entered manually</dd>
+            <dd>
+              @switch (analysis.input_source) {
+                @case ('listing_url') {
+                  Imported from {{ analysis.source?.site }}
+                }
+                @case ('listing_text') {
+                  Imported from pasted listing text
+                }
+                @default {
+                  Entered manually
+                }
+              }
+            </dd>
           </div>
+          @if (analysis.source; as source) {
+            @if (source.url) {
+              <div>
+                <dt>Listing</dt>
+                <dd>
+                  <a [href]="source.url" target="_blank" rel="noopener noreferrer nofollow"
+                    >Open the original listing</a
+                  >
+                </dd>
+              </div>
+            }
+            <div>
+              <dt>Listing read on</dt>
+              <dd>{{ source.observed_at | date: 'd MMMM y, HH:mm' }}</dd>
+            </div>
+            @if (source.latitude !== null && source.longitude !== null) {
+              <div>
+                <dt>Coordinates</dt>
+                <dd>
+                  {{ source.latitude | number: '1.4-4' }}, {{ source.longitude | number: '1.4-4' }}
+                </dd>
+              </div>
+            }
+          }
           <div>
             <dt>Estimate source</dt>
             <dd [class.not-stated]="!hasEstimate">

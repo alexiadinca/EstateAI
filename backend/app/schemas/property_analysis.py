@@ -7,6 +7,8 @@ from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, field_validator, model_validator
 
+from app.extraction.fetcher import UnsupportedListingUrlError, identify_site
+
 # Decimal values are sent to the browser as JSON numbers instead of strings.
 JsonDecimal = Annotated[Decimal, PlainSerializer(float, return_type=float, when_used="json")]
 
@@ -16,6 +18,29 @@ PropertyCondition = Literal["new", "renovated", "good", "needs_renovation"]
 # The valuation dataset is priced in EUR; other currencies need a conversion policy first.
 SupportedCurrency = Literal["EUR"]
 AnalysisStatus = Literal["pending", "completed", "unavailable", "failed"]
+
+# How the details reached the form: typed by hand, read from a listing link, or read from
+# listing text the user pasted.
+InputSource = Literal["manual_entry", "listing_url", "listing_text"]
+SupportedListingSite = Literal["storia.ro", "olx.ro"]
+# Where a confirmed value came from. Fields missing from the map were entered manually.
+FieldOrigin = Literal["listing", "description", "corrected"]
+ProvenanceField = Literal[
+    "city_id",
+    "neighborhood",
+    "property_type",
+    "usable_area_m2",
+    "rooms",
+    "floor",
+    "total_floors",
+    "construction_year",
+    "structure",
+    "condition",
+    "has_balcony",
+    "has_elevator",
+    "has_parking",
+    "asking_price",
+]
 
 # Bounds follow the cleaning rules from the ML presentation: values outside them were
 # treated as impossible in the listing data (10 to 1,000 m², 1 to 20 rooms).
@@ -27,6 +52,19 @@ MAX_FLOORS = 60
 MIN_CONSTRUCTION_YEAR = 1800
 # Off-plan apartments can be listed a few years before completion.
 FUTURE_CONSTRUCTION_YEARS = 5
+
+
+class ListingSource(BaseModel):
+    """The listing the details were imported from. Coordinates are kept when available."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    site: SupportedListingSite | None = None
+    url: str | None = Field(default=None, max_length=2000)
+    title: str | None = Field(default=None, max_length=300)
+    observed_at: datetime
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
 
 
 class PropertyAnalysisCreate(BaseModel):
@@ -55,6 +93,9 @@ class PropertyAnalysisCreate(BaseModel):
     has_parking: bool | None = None
     asking_price: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     currency: SupportedCurrency = "EUR"
+    input_source: InputSource = "manual_entry"
+    source: ListingSource | None = None
+    field_provenance: dict[ProvenanceField, FieldOrigin] = Field(default_factory=dict)
 
     @field_validator("neighborhood")
     @classmethod
@@ -81,6 +122,21 @@ class PropertyAnalysisCreate(BaseModel):
             raise ValueError(
                 "The floor cannot be higher than the number of floors in the building."
             )
+        return self
+
+    @model_validator(mode="after")
+    def check_source_matches_input(self) -> Self:
+        if self.input_source == "manual_entry" and (self.source or self.field_provenance):
+            raise ValueError("A manually entered property has no listing source.")
+        if self.input_source == "listing_url" and (self.source is None or not self.source.url):
+            raise ValueError("An imported listing must include its link.")
+        if self.input_source == "listing_text" and self.source and self.source.url:
+            raise ValueError("Pasted listing text has no link.")
+        if self.source and self.source.url:
+            try:
+                identify_site(self.source.url)
+            except UnsupportedListingUrlError as error:
+                raise ValueError(str(error)) from error
         return self
 
 
@@ -138,7 +194,9 @@ class AnalysisSummary(BaseModel):
 class AnalysisDetail(BaseModel):
     analysis_id: uuid.UUID
     created_at: datetime
-    input_source: Literal["manual_entry"]
+    input_source: InputSource
+    source: ListingSource | None = None
+    field_provenance: dict[ProvenanceField, FieldOrigin] = Field(default_factory=dict)
     property: ConfirmedPropertyInputs
     asking_price: JsonDecimal
     currency: str

@@ -102,6 +102,74 @@
   gap: var(--space-3);
 }
 
+// Floor, floors in the building and construction year: three equal columns on one row.
+// Subgrid lines up the labels, inputs and messages of the three fields with each other.
+.field-row--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(4, auto);
+  column-gap: var(--space-4);
+  row-gap: 0;
+
+  > .field {
+    grid-row: span 4;
+    grid-template-rows: subgrid;
+    row-gap: var(--space-1);
+    align-content: start;
+  }
+}
+
+.import-card {
+  display: grid;
+  gap: var(--space-4);
+  border-left: 4px solid var(--color-accent);
+}
+
+.import-card__intro p {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+
+.import-card__input {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.import-card__textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+  font-size: var(--font-size-sm);
+}
+
+.import-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.import-summary {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+}
+
+.import-summary__headline {
+  font-weight: 500;
+}
+
+.import-summary__title {
+  font-style: italic;
+  font-size: var(--font-size-sm);
+}
+
+.import-summary__legend {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  line-height: 2;
+}
+
 .review {
   display: grid;
   gap: var(--space-5);
@@ -132,6 +200,17 @@
 }
 
 @media (max-width: 40rem) {
+  .field-row--three {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    row-gap: var(--space-4);
+
+    > .field {
+      grid-row: auto;
+      grid-template-rows: none;
+    }
+  }
+
   .review__price {
     justify-items: start;
   }

@@ -19,7 +19,9 @@ from app.services.pricing import price_per_m2
 from app.services.user_profiles import get_or_create_profile
 from app.services.valuation import estimate_reference_price
 
-SNAPSHOT_SCHEMA_VERSION = 1
+# Version 2 adds the listing source and the origin of each field. Version 1 snapshots
+# (manual entry only) are still read: their source is empty.
+SNAPSHOT_SCHEMA_VERSION = 2
 MANUAL_ENTRY = "manual_entry"
 
 
@@ -68,7 +70,15 @@ def create_property_analysis(
     neighborhood = _get_or_create_neighborhood(session, city, request.neighborhood)
 
     characteristics = request.model_dump(
-        exclude={"city_id", "neighborhood", "asking_price", "currency"}
+        exclude={
+            "city_id",
+            "neighborhood",
+            "asking_price",
+            "currency",
+            "input_source",
+            "source",
+            "field_provenance",
+        }
     )
     saved_property = Property(neighborhood_id=neighborhood.neighborhood_id, **characteristics)
     session.add(saved_property)
@@ -85,7 +95,11 @@ def create_property_analysis(
         property_id=saved_property.property_id,
         confirmed_inputs={
             "schema_version": SNAPSHOT_SCHEMA_VERSION,
-            "input_source": MANUAL_ENTRY,
+            "input_source": request.input_source,
+            # Where the details came from, so extracted, entered and corrected values stay
+            # distinguishable when the analysis is reopened.
+            "source": request.source.model_dump(mode="json") if request.source else None,
+            "field_provenance": request.field_provenance,
             "property": confirmed_inputs.model_dump(mode="json"),
         },
         asking_price=request.asking_price,
@@ -147,6 +161,8 @@ def to_analysis_detail(analysis: Analysis) -> AnalysisDetail:
         analysis_id=analysis.analysis_id,
         created_at=analysis.created_at,
         input_source=analysis.confirmed_inputs.get("input_source", MANUAL_ENTRY),
+        source=analysis.confirmed_inputs.get("source"),
+        field_provenance=analysis.confirmed_inputs.get("field_provenance") or {},
         property=confirmed,
         asking_price=analysis.asking_price,
         currency=analysis.currency,
