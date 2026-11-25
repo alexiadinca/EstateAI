@@ -62,6 +62,8 @@ class Property(Base):
     floor: Mapped[int | None] = mapped_column(SmallInteger)
     total_floors: Mapped[int | None] = mapped_column(SmallInteger)
     construction_year: Mapped[int | None] = mapped_column(SmallInteger)
+    # Building structure as declared in the listing, for example concrete or brick.
+    structure: Mapped[str | None] = mapped_column(String(30))
     condition: Mapped[str | None] = mapped_column(String(30))
     has_balcony: Mapped[bool | None] = mapped_column(Boolean)
     has_elevator: Mapped[bool | None] = mapped_column(Boolean)

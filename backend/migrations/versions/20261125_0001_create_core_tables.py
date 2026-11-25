@@ -96,6 +96,7 @@ def upgrade() -> None:
         sa.Column("floor", sa.SmallInteger(), nullable=True),
         sa.Column("total_floors", sa.SmallInteger(), nullable=True),
         sa.Column("construction_year", sa.SmallInteger(), nullable=True),
+        sa.Column("structure", sa.String(length=30), nullable=True),
         sa.Column("condition", sa.String(length=30), nullable=True),
         sa.Column("has_balcony", sa.Boolean(), nullable=True),
         sa.Column("has_elevator", sa.Boolean(), nullable=True),
