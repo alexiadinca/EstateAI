@@ -1,8 +1,9 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 
 import { App } from './app';
+import { requireSignIn } from './core/auth/auth.guards';
 import { AuthService } from './core/auth/auth.service';
 
 function renderShell(signedIn: boolean): HTMLElement {
@@ -53,6 +54,37 @@ describe('App shell', () => {
     expect(page.querySelector('.site-nav__link')?.textContent).toContain('My analyses');
     expect(page.querySelector('.session__account')?.textContent).toContain('demo1@estateai.test');
     expect(page.querySelector('.session__sign-out')).not.toBeNull();
+  });
+
+  it('leaves a private page when the session ends, for example in another tab', async () => {
+    const signedIn = signal(true);
+    TestBed.configureTestingModule({
+      imports: [App],
+      providers: [
+        provideRouter([
+          { path: '', children: [] },
+          { path: 'analyses', canActivate: [requireSignIn], children: [] },
+        ]),
+        {
+          provide: AuthService,
+          useValue: {
+            ready: Promise.resolve(),
+            isSignedIn: signedIn,
+            userEmail: signal('demo1@estateai.test'),
+          },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(App);
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/analyses');
+    await fixture.whenStable();
+    expect(router.url).toBe('/analyses');
+
+    signedIn.set(false);
+    await fixture.whenStable();
+
+    expect(router.url).toBe('/');
   });
 
   it('makes the header translucent from the first scroll', async () => {

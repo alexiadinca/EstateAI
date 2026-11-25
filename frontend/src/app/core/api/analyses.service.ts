@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { LiveUpdates } from '../live/live-updates';
 
 // Types mirror the FastAPI contract in backend/app/schemas/property_analysis.py.
 
@@ -152,6 +153,7 @@ export interface AnalysisDetail {
 export class AnalysesService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiBaseUrl;
+  private readonly liveUpdates = inject(LiveUpdates);
 
   getSupportedCities(): Observable<City[]> {
     return this.http.get<City[]>(`${this.baseUrl}/cities`);
@@ -163,7 +165,9 @@ export class AnalysesService {
   }
 
   createAnalysis(request: PropertyAnalysisRequest): Observable<AnalysisDetail> {
-    return this.http.post<AnalysisDetail>(`${this.baseUrl}/analyses`, request);
+    return this.http
+      .post<AnalysisDetail>(`${this.baseUrl}/analyses`, request)
+      .pipe(tap(() => this.liveUpdates.announceChange('analyses')));
   }
 
   listMyAnalyses(): Observable<AnalysisSummary[]> {

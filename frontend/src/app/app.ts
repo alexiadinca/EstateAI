@@ -1,7 +1,8 @@
-import { afterNextRender, Component, DestroyRef, inject, signal } from '@angular/core';
+import { afterNextRender, Component, DestroyRef, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthFailure } from './core/auth/auth-errors';
+import { isOnProtectedPage } from './core/auth/auth.guards';
 import { AuthService } from './core/auth/auth.service';
 
 /** Application shell: espresso header, page content and footer. */
@@ -20,6 +21,17 @@ export class App {
   protected readonly scrolled = signal(false);
 
   constructor() {
+    // Supabase shares the session between tabs. When it ends here or in another tab, or can no
+    // longer be refreshed, a private page must not stay on screen with the previous data.
+    let wasSignedIn = false;
+    effect(() => {
+      const signedIn = this.auth.isSignedIn();
+      if (wasSignedIn && !signedIn && isOnProtectedPage(this.router)) {
+        void this.router.navigateByUrl('/');
+      }
+      wasSignedIn = signedIn;
+    });
+
     const destroyRef = inject(DestroyRef);
     afterNextRender(() => {
       const updateScrolled = () => this.scrolled.set(window.scrollY > 0);
