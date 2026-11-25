@@ -1,0 +1,121 @@
+.state-card {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.state-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.verdict {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.verdict__headline {
+  max-width: 42rem;
+  font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+}
+
+// Asking price, estimate and difference stay together, also on small screens.
+.figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.figures__item {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background: var(--color-surface-muted);
+
+  & + & {
+    border-left: var(--border-width) solid var(--color-border);
+  }
+}
+
+.figures__label {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.figures__value {
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  line-height: 1.1;
+
+  &--empty {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xl);
+  }
+}
+
+.figures__note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.verdict__reason {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-surface-tinted);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+
+  .eyebrow {
+    margin-bottom: 0;
+  }
+}
+
+.verdict__explainer {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.card-title {
+  margin-bottom: var(--space-3);
+}
+
+.detail-list--single {
+  grid-template-columns: 1fr;
+}
+
+.snapshot-note {
+  margin-top: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+@media (max-width: 52rem) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 40rem) {
+  .figures {
+    grid-template-columns: 1fr;
+  }
+
+  .figures__item + .figures__item {
+    border-left: none;
+    border-top: var(--border-width) solid var(--color-border);
+  }
+}

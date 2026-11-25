@@ -1,12 +1,28 @@
 <a class="skip-link" href="#main-content">Skip to main content</a>
 
-<header class="site-header">
+<header class="site-header" [class.site-header--scrolled]="scrolled()">
   <div class="site-header__inner">
     <a class="wordmark" [routerLink]="auth.isSignedIn() ? signedInHome : '/sign-in'">EstateAI</a>
 
     @if (auth.isSignedIn()) {
+      <nav class="site-nav" aria-label="Main">
+        <a
+          class="site-nav__link"
+          routerLink="/analyses"
+          routerLinkActive="site-nav__link--active"
+          ariaCurrentWhenActive="page"
+          >My analyses</a
+        >
+      </nav>
+
       <div class="session">
-        <span class="session__email">{{ auth.userEmail() }}</span>
+        <a
+          class="session__account"
+          routerLink="/account"
+          routerLinkActive="session__account--active"
+          ariaCurrentWhenActive="page"
+          >{{ auth.userEmail() }}</a
+        >
         <button class="session__sign-out" type="button" (click)="signOut()">Sign out</button>
       </div>
     }

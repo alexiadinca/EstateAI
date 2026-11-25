@@ -39,10 +39,35 @@ describe('App shell', () => {
     expect(page.querySelector('.session__sign-out')).toBeNull();
   });
 
-  it('shows the signed-in email and a sign-out button', () => {
+  it('shows navigation, the signed-in email and a sign-out button', () => {
     const page = renderShell(true);
 
-    expect(page.querySelector('.session__email')?.textContent).toContain('demo1@estateai.test');
+    expect(page.querySelector('.site-nav__link')?.textContent).toContain('My analyses');
+    expect(page.querySelector('.session__account')?.textContent).toContain('demo1@estateai.test');
     expect(page.querySelector('.session__sign-out')).not.toBeNull();
+  });
+
+  it('makes the header translucent from the first scroll', async () => {
+    TestBed.configureTestingModule({
+      imports: [App],
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthService,
+          useValue: { isSignedIn: signal(false), userEmail: signal(null), signOut: async () => {} },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const header = (fixture.nativeElement as HTMLElement).querySelector('.site-header')!;
+    expect(header.classList).not.toContain('site-header--scrolled');
+
+    Object.defineProperty(window, 'scrollY', { value: 1, configurable: true });
+    window.dispatchEvent(new Event('scroll'));
+    await fixture.whenStable();
+
+    expect(header.classList).toContain('site-header--scrolled');
+    Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
   });
 });

@@ -1,0 +1,146 @@
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.stepper__step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  &--current {
+    color: var(--color-text);
+    font-weight: 500;
+
+    .stepper__number {
+      color: var(--color-on-primary);
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+  }
+}
+
+.stepper__number {
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: var(--border-width) solid var(--color-accent);
+  font-size: 0.8125rem;
+}
+
+.stepper__divider {
+  flex: 0 0 3rem;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.entry-form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.form-section {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.form-section__header {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  padding-bottom: var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border);
+
+  p {
+    margin-top: var(--space-1);
+    font-size: var(--font-size-sm);
+  }
+}
+
+// Large serif section number, a quiet editorial detail.
+.form-section__index {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-xl);
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.inline-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.amenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+}
+
+.price-field {
+  max-width: 22rem;
+
+  .field-input {
+    font-size: var(--font-size-lg);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.review {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.review__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.review__title {
+  font-size: var(--font-size-xl);
+}
+
+.review__price {
+  display: grid;
+  justify-items: end;
+}
+
+.review__price-value {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-2xl);
+}
+
+@media (max-width: 40rem) {
+  .review__price {
+    justify-items: start;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+
+    .button {
+      width: 100%;
+    }
+  }
+}

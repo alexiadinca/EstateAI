@@ -3,7 +3,8 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from './auth.service';
 
-export const SIGNED_IN_HOME = '/account';
+/** The signed-in experience opens on the user's saved analyses. */
+export const SIGNED_IN_HOME = '/analyses';
 
 /** Allows a route only for signed-in users; others are sent to sign-in and brought back after. */
 export const requireSignIn: CanActivateFn = async (_route, state) => {

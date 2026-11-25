@@ -1,0 +1,478 @@
+<section class="page page--narrow">
+  <div>
+    <a class="back-link" routerLink="/analyses">← My analyses</a>
+  </div>
+
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">New analysis</span>
+      <h1>Analyze a property</h1>
+      <p class="page-intro">
+        Enter what you know about the property. Leave a detail empty if the listing does not mention
+        it; it will be saved as not stated.
+      </p>
+    </div>
+  </header>
+
+  <ol class="stepper" aria-label="Progress">
+    <li
+      class="stepper__step"
+      [class.stepper__step--current]="step() === 'details'"
+      [attr.aria-current]="step() === 'details' ? 'step' : null"
+    >
+      <span class="stepper__number">1</span> Property details
+    </li>
+    <li class="stepper__divider" aria-hidden="true"></li>
+    <li
+      class="stepper__step"
+      [class.stepper__step--current]="step() === 'review'"
+      [attr.aria-current]="step() === 'review' ? 'step' : null"
+    >
+      <span class="stepper__number">2</span> Review and save
+    </li>
+  </ol>
+
+  @if (step() === 'details') {
+    <form class="entry-form" [formGroup]="form" (ngSubmit)="goToReview()" novalidate>
+      <!-- Location -->
+      <section class="card form-section" aria-labelledby="location-heading">
+        <header class="form-section__header">
+          <span class="form-section__index">01</span>
+          <div>
+            <h2 id="location-heading" class="section-title">Location</h2>
+            <p class="muted">Valuations currently cover Bucharest and Craiova.</p>
+          </div>
+        </header>
+
+        @let cities = citiesState();
+        @if (cities.status === 'error') {
+          <div class="alert alert--error inline-alert" role="alert">
+            <span>{{ cities.message }}</span>
+            <button class="button button--secondary" type="button" (click)="loadCities()">
+              Try again
+            </button>
+          </div>
+        }
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="property-city">City</label>
+            <select
+              id="property-city"
+              class="field-input field-select"
+              formControlName="cityId"
+              [attr.aria-invalid]="showError('cityId')"
+              aria-describedby="property-city-error"
+            >
+              <option [ngValue]="null" disabled>
+                {{ cities.status === 'loading' ? 'Loading cities…' : 'Choose a city' }}
+              </option>
+              @if (cities.status === 'loaded') {
+                @for (city of cities.cities; track city.city_id) {
+                  <option [ngValue]="city.city_id">{{ city.name }}</option>
+                }
+              }
+            </select>
+            @if (showError('cityId')) {
+              <p class="field-error" id="property-city-error">Choose a city.</p>
+            }
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="property-neighborhood">Neighborhood</label>
+            <input
+              id="property-neighborhood"
+              class="field-input"
+              type="text"
+              formControlName="neighborhood"
+              placeholder="For example, Rogerius"
+              [attr.aria-invalid]="showError('neighborhood')"
+              aria-describedby="property-neighborhood-error"
+            />
+            @if (showError('neighborhood')) {
+              <p class="field-error" id="property-neighborhood-error">Enter the neighborhood.</p>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Physical characteristics -->
+      <section class="card form-section" aria-labelledby="characteristics-heading">
+        <header class="form-section__header">
+          <span class="form-section__index">02</span>
+          <div>
+            <h2 id="characteristics-heading" class="section-title">Property</h2>
+            <p class="muted">The characteristics used to estimate the reference price.</p>
+          </div>
+        </header>
+
+        <fieldset class="fieldset">
+          <legend class="field-label">Property type</legend>
+          <div class="segmented">
+            <label>
+              <input type="radio" formControlName="propertyType" value="apartment" />
+              <span>Apartment</span>
+            </label>
+            <label>
+              <input type="radio" formControlName="propertyType" value="house" />
+              <span>House</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="property-area">Usable area</label>
+            <div class="input-affix">
+              <input
+                id="property-area"
+                class="field-input"
+                type="number"
+                inputmode="decimal"
+                formControlName="usableArea"
+                [min]="limits.minUsableArea"
+                [max]="limits.maxUsableArea"
+                step="0.01"
+                [attr.aria-invalid]="showError('usableArea')"
+                aria-describedby="property-area-error"
+              />
+              <span class="input-affix__unit" aria-hidden="true">m²</span>
+            </div>
+            @if (showError('usableArea')) {
+              <p class="field-error" id="property-area-error">
+                Enter a usable area between {{ limits.minUsableArea }} and
+                {{ limits.maxUsableArea | number }} m², with at most two decimals.
+              </p>
+            }
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="property-rooms">Rooms</label>
+            <input
+              id="property-rooms"
+              class="field-input"
+              type="number"
+              inputmode="numeric"
+              formControlName="rooms"
+              min="1"
+              [max]="limits.maxRooms"
+              step="1"
+              [attr.aria-invalid]="showError('rooms')"
+              aria-describedby="property-rooms-error"
+            />
+            @if (showError('rooms')) {
+              <p class="field-error" id="property-rooms-error">
+                Enter a whole number of rooms between 1 and {{ limits.maxRooms }}.
+              </p>
+            }
+          </div>
+        </div>
+
+        <div class="field-row">
+          @if (!isHouse()) {
+            <div class="field">
+              <label class="field-label" for="property-floor">Floor</label>
+              <input
+                id="property-floor"
+                class="field-input"
+                type="number"
+                inputmode="numeric"
+                formControlName="floor"
+                [min]="limits.minFloor"
+                [max]="limits.maxFloors"
+                step="1"
+                [attr.aria-invalid]="showError('floor') || showFloorAboveBuilding()"
+                aria-describedby="property-floor-hint property-floor-error"
+              />
+              <p class="field-hint" id="property-floor-hint">0 for the ground floor.</p>
+              @if (showError('floor')) {
+                <p class="field-error" id="property-floor-error">
+                  Enter a whole number between {{ limits.minFloor }} and {{ limits.maxFloors }}.
+                </p>
+              } @else if (showFloorAboveBuilding()) {
+                <p class="field-error" id="property-floor-error">
+                  The floor cannot be higher than the number of floors in the building.
+                </p>
+              }
+            </div>
+          }
+
+          <div class="field">
+            <label class="field-label" for="property-total-floors">
+              {{ isHouse() ? 'Number of floors' : 'Floors in the building' }}
+            </label>
+            <input
+              id="property-total-floors"
+              class="field-input"
+              type="number"
+              inputmode="numeric"
+              formControlName="totalFloors"
+              min="1"
+              [max]="limits.maxFloors"
+              step="1"
+              [attr.aria-invalid]="showError('totalFloors')"
+              aria-describedby="property-total-floors-error"
+            />
+            @if (showError('totalFloors')) {
+              <p class="field-error" id="property-total-floors-error">
+                Enter a whole number between 1 and {{ limits.maxFloors }}.
+              </p>
+            }
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="property-year">Construction year</label>
+            <input
+              id="property-year"
+              class="field-input"
+              type="number"
+              inputmode="numeric"
+              formControlName="constructionYear"
+              [min]="limits.minConstructionYear"
+              [max]="limits.maxConstructionYear"
+              step="1"
+              [attr.aria-invalid]="showError('constructionYear')"
+              aria-describedby="property-year-error"
+            />
+            @if (showError('constructionYear')) {
+              <p class="field-error" id="property-year-error">
+                Enter a year between {{ limits.minConstructionYear }} and
+                {{ limits.maxConstructionYear }}.
+              </p>
+            }
+          </div>
+        </div>
+
+        @if (isHouse()) {
+          <p class="field-hint">The apartment floor and the lift do not apply to a house.</p>
+        }
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="property-structure">Structure</label>
+            <select
+              id="property-structure"
+              class="field-input field-select"
+              formControlName="structure"
+            >
+              <option value="">{{ notStated }}</option>
+              @for (option of structureOptions; track option[0]) {
+                <option [value]="option[0]">{{ option[1] }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="property-condition">Condition</label>
+            <select
+              id="property-condition"
+              class="field-input field-select"
+              formControlName="condition"
+            >
+              <option value="">{{ notStated }}</option>
+              @for (option of conditionOptions; track option[0]) {
+                <option [value]="option[0]">{{ option[1] }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="amenities">
+          @if (!isHouse()) {
+            <fieldset class="fieldset">
+              <legend class="field-label">Lift</legend>
+              <div class="segmented segmented--compact">
+                @for (choice of amenityChoices; track choice.value) {
+                  <label>
+                    <input type="radio" formControlName="hasElevator" [value]="choice.value" />
+                    <span>{{ choice.label }}</span>
+                  </label>
+                }
+              </div>
+            </fieldset>
+          }
+
+          <fieldset class="fieldset">
+            <legend class="field-label">Balcony</legend>
+            <div class="segmented segmented--compact">
+              @for (choice of amenityChoices; track choice.value) {
+                <label>
+                  <input type="radio" formControlName="hasBalcony" [value]="choice.value" />
+                  <span>{{ choice.label }}</span>
+                </label>
+              }
+            </div>
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend class="field-label">Parking</legend>
+            <div class="segmented segmented--compact">
+              @for (choice of amenityChoices; track choice.value) {
+                <label>
+                  <input type="radio" formControlName="hasParking" [value]="choice.value" />
+                  <span>{{ choice.label }}</span>
+                </label>
+              }
+            </div>
+          </fieldset>
+        </div>
+      </section>
+
+      <!-- Price -->
+      <section class="card form-section" aria-labelledby="price-heading">
+        <header class="form-section__header">
+          <span class="form-section__index">03</span>
+          <div>
+            <h2 id="price-heading" class="section-title">Price</h2>
+            <p class="muted">
+              The asking price is compared with the estimate after the valuation. It is never used
+              to calculate the estimate.
+            </p>
+          </div>
+        </header>
+
+        <div class="field price-field">
+          <label class="field-label" for="property-price">Asking price</label>
+          <div class="input-affix">
+            <span class="input-affix__unit" aria-hidden="true">€</span>
+            <input
+              id="property-price"
+              class="field-input"
+              type="number"
+              inputmode="decimal"
+              formControlName="askingPrice"
+              min="1"
+              step="1"
+              [attr.aria-invalid]="showError('askingPrice')"
+              aria-describedby="property-price-hint property-price-error"
+            />
+            <span class="input-affix__unit" aria-hidden="true">EUR</span>
+          </div>
+          <p class="field-hint" id="property-price-hint">Prices are analyzed in euro.</p>
+          @if (showError('askingPrice')) {
+            <p class="field-error" id="property-price-error">
+              Enter an asking price greater than zero, with at most two decimals.
+            </p>
+          }
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <a class="button button--secondary" routerLink="/analyses">Cancel</a>
+        <button class="button button--primary" type="submit">Review details</button>
+      </div>
+    </form>
+  } @else {
+    @if (reviewedRequest(); as request) {
+      <section class="card review" aria-labelledby="review-heading">
+        <header class="review__header">
+          <div>
+            <span class="eyebrow">Check before saving</span>
+            <h2 id="review-heading" class="review__title">
+              {{ propertyHeadline(request.property_type, request.rooms) }}
+            </h2>
+            <p class="muted">{{ request.neighborhood }}, {{ reviewedCity()?.name }}</p>
+          </div>
+          <div class="review__price">
+            <span class="eyebrow">Asking price</span>
+            <span class="figure review__price-value">{{
+              request.asking_price | currency: 'EUR' : 'symbol' : '1.0-2'
+            }}</span>
+          </div>
+        </header>
+
+        <dl class="detail-list">
+          <div>
+            <dt>Property type</dt>
+            <dd>{{ request.property_type === 'house' ? 'House' : 'Apartment' }}</dd>
+          </div>
+          <div>
+            <dt>Usable area</dt>
+            <dd>{{ request.usable_area_m2 | number: '1.0-2' }} m²</dd>
+          </div>
+          <div>
+            <dt>Rooms</dt>
+            <dd>{{ request.rooms }}</dd>
+          </div>
+          <div>
+            <dt>Floor</dt>
+            <dd [class.not-stated]="request.floor === null">
+              {{ floorLabel(request.property_type, request.floor) }}
+            </dd>
+          </div>
+          <div>
+            <dt>
+              {{ request.property_type === 'house' ? 'Number of floors' : 'Floors in building' }}
+            </dt>
+            <dd [class.not-stated]="request.total_floors === null">
+              {{ request.total_floors ?? notStated }}
+            </dd>
+          </div>
+          <div>
+            <dt>Construction year</dt>
+            <dd [class.not-stated]="request.construction_year === null">
+              {{ request.construction_year ?? notStated }}
+            </dd>
+          </div>
+          <div>
+            <dt>Structure</dt>
+            <dd [class.not-stated]="!request.structure">
+              {{ request.structure ? structureLabels[request.structure] : notStated }}
+            </dd>
+          </div>
+          <div>
+            <dt>Condition</dt>
+            <dd [class.not-stated]="!request.condition">
+              {{ request.condition ? conditionLabels[request.condition] : notStated }}
+            </dd>
+          </div>
+          <div>
+            <dt>Lift</dt>
+            <dd [class.not-stated]="request.has_elevator === null">
+              {{
+                request.property_type === 'house'
+                  ? 'Not applicable'
+                  : amenityLabel(request.has_elevator)
+              }}
+            </dd>
+          </div>
+          <div>
+            <dt>Balcony</dt>
+            <dd [class.not-stated]="request.has_balcony === null">
+              {{ amenityLabel(request.has_balcony) }}
+            </dd>
+          </div>
+          <div>
+            <dt>Parking</dt>
+            <dd [class.not-stated]="request.has_parking === null">
+              {{ amenityLabel(request.has_parking) }}
+            </dd>
+          </div>
+        </dl>
+
+        @if (saveError(); as message) {
+          <p class="alert alert--error" role="alert">{{ message }}</p>
+        }
+
+        <div class="form-actions">
+          <button
+            class="button button--secondary"
+            type="button"
+            (click)="backToDetails()"
+            [disabled]="saving()"
+          >
+            Edit details
+          </button>
+          <button
+            class="button button--primary"
+            type="button"
+            (click)="confirmAndSave()"
+            [disabled]="saving()"
+          >
+            {{ saving() ? 'Saving…' : 'Confirm and save' }}
+          </button>
+        </div>
+      </section>
+    }
+  }
+</section>
