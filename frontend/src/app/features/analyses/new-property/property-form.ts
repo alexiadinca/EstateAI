@@ -2,9 +2,14 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
 import {
   BuildingStructure,
+  ExtractedValues,
+  FieldOrigin,
+  InputSource,
+  ListingSource,
   PropertyAnalysisRequest,
   PropertyCondition,
   PropertyType,
+  ProvenanceField,
 } from '../../../core/api/analyses.service';
 
 // Limits match the backend validation in backend/app/schemas/property_analysis.py.
@@ -46,13 +51,104 @@ export function toAmenityValue(choice: AmenityChoice): boolean | null {
   return choice === 'yes';
 }
 
+export function toAmenityChoice(value: boolean | null): AmenityChoice {
+  if (value === null) {
+    return 'unknown';
+  }
+  return value ? 'yes' : 'no';
+}
+
+/** Form control name for each API field whose origin is tracked. */
+export const FORM_FIELD_FOR: Record<ProvenanceField, keyof PropertyFormValue> = {
+  city_id: 'cityId',
+  neighborhood: 'neighborhood',
+  property_type: 'propertyType',
+  usable_area_m2: 'usableArea',
+  rooms: 'rooms',
+  floor: 'floor',
+  total_floors: 'totalFloors',
+  construction_year: 'constructionYear',
+  structure: 'structure',
+  condition: 'condition',
+  has_balcony: 'hasBalcony',
+  has_elevator: 'hasElevator',
+  has_parking: 'hasParking',
+  asking_price: 'askingPrice',
+};
+
+/** Where the form's details came from, sent with the analysis when it is saved. */
+export interface ImportContext {
+  inputSource: InputSource;
+  source: ListingSource | null;
+  fieldProvenance: Partial<Record<ProvenanceField, FieldOrigin>>;
+}
+
+export const MANUAL_ENTRY: ImportContext = {
+  inputSource: 'manual_entry',
+  source: null,
+  fieldProvenance: {},
+};
+
+/** Converts proposed values into form values. Values the listing does not state are left out. */
+export function extractionToFormValue(values: ExtractedValues): Partial<PropertyFormValue> {
+  const formValue: Partial<PropertyFormValue> = {};
+  const set = <K extends keyof PropertyFormValue>(key: K, value: PropertyFormValue[K] | null) => {
+    if (value !== null) {
+      formValue[key] = value;
+    }
+  };
+  set('cityId', values.city_id);
+  set('neighborhood', values.neighborhood);
+  set('propertyType', values.property_type);
+  set('usableArea', values.usable_area_m2);
+  set('rooms', values.rooms);
+  set('floor', values.floor);
+  set('totalFloors', values.total_floors);
+  set('constructionYear', values.construction_year);
+  set('structure', values.structure);
+  set('condition', values.condition);
+  set('askingPrice', values.asking_price);
+  if (values.has_balcony !== null) formValue.hasBalcony = toAmenityChoice(values.has_balcony);
+  if (values.has_elevator !== null) formValue.hasElevator = toAmenityChoice(values.has_elevator);
+  if (values.has_parking !== null) formValue.hasParking = toAmenityChoice(values.has_parking);
+  return formValue;
+}
+
+/**
+ * Origin of each imported field at this moment: unchanged values keep their origin, and
+ * values the user changed or cleared become "corrected". Fields that were not imported are
+ * not listed, which means they were entered manually.
+ */
+export function currentFieldProvenance(
+  importedOrigins: Partial<Record<ProvenanceField, 'listing' | 'description'>>,
+  importedValues: Partial<PropertyFormValue>,
+  currentValue: PropertyFormValue,
+): Partial<Record<ProvenanceField, FieldOrigin>> {
+  const provenance: Partial<Record<ProvenanceField, FieldOrigin>> = {};
+  for (const [apiField, origin] of Object.entries(importedOrigins) as [
+    ProvenanceField,
+    'listing' | 'description',
+  ][]) {
+    const formField = FORM_FIELD_FOR[apiField];
+    provenance[apiField] =
+      importedValues[formField] === currentValue[formField] ? origin : 'corrected';
+  }
+  return provenance;
+}
+
 /**
  * Converts the confirmed form into the API request.
  * For a house, the apartment floor and the lift are not applicable and are sent as null.
  */
-export function toAnalysisRequest(value: PropertyFormValue): PropertyAnalysisRequest {
+export function toAnalysisRequest(
+  value: PropertyFormValue,
+  importContext: ImportContext = MANUAL_ENTRY,
+): PropertyAnalysisRequest {
   const isHouse = value.propertyType === 'house';
   return {
+    input_source: importContext.inputSource,
+    source: importContext.source,
+    field_provenance: importContext.fieldProvenance,
     city_id: value.cityId as number,
     neighborhood: value.neighborhood.trim().replace(/\s+/g, ' '),
     property_type: value.propertyType,

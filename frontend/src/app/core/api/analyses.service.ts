@@ -33,12 +33,77 @@ export interface PropertyCharacteristics {
   has_parking: boolean | null;
 }
 
+/** How the details reached the form. */
+export type InputSource = 'manual_entry' | 'listing_url' | 'listing_text';
+
+/** Where a confirmed value came from. Fields without an origin were entered manually. */
+export type FieldOrigin = 'listing' | 'description' | 'corrected';
+
+export type ProvenanceField =
+  | 'city_id'
+  | 'neighborhood'
+  | 'property_type'
+  | 'usable_area_m2'
+  | 'rooms'
+  | 'floor'
+  | 'total_floors'
+  | 'construction_year'
+  | 'structure'
+  | 'condition'
+  | 'has_balcony'
+  | 'has_elevator'
+  | 'has_parking'
+  | 'asking_price';
+
+export interface ListingSource {
+  site: 'storia.ro' | 'olx.ro' | null;
+  url: string | null;
+  title: string | null;
+  observed_at: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 export interface PropertyAnalysisRequest extends PropertyCharacteristics {
   city_id: number;
   neighborhood: string;
   asking_price: number;
   currency: 'EUR';
+  input_source: InputSource;
+  source: ListingSource | null;
+  field_provenance: Partial<Record<ProvenanceField, FieldOrigin>>;
 }
+
+/** Values proposed from a listing. Any of them may be missing. */
+export interface ExtractedValues {
+  city_id: number | null;
+  neighborhood: string | null;
+  property_type: PropertyType | null;
+  usable_area_m2: number | null;
+  rooms: number | null;
+  floor: number | null;
+  total_floors: number | null;
+  construction_year: number | null;
+  structure: BuildingStructure | null;
+  condition: PropertyCondition | null;
+  has_balcony: boolean | null;
+  has_elevator: boolean | null;
+  has_parking: boolean | null;
+  asking_price: number | null;
+}
+
+export interface ExtractionResult {
+  input_source: 'listing_url' | 'listing_text';
+  source: ListingSource;
+  transaction_type: 'sale' | 'rent' | null;
+  monthly_rent: number | null;
+  monthly_rent_currency: string | null;
+  values: ExtractedValues;
+  provenance: Partial<Record<ProvenanceField, 'listing' | 'description'>>;
+  notices: string[];
+}
+
+export type ExtractionRequest = { url: string } | { text: string };
 
 export interface ConfirmedProperty extends PropertyCharacteristics {
   city: string;
@@ -73,7 +138,9 @@ export interface AnalysisSummary {
 export interface AnalysisDetail {
   analysis_id: string;
   created_at: string;
-  input_source: 'manual_entry';
+  input_source: InputSource;
+  source: ListingSource | null;
+  field_provenance: Partial<Record<ProvenanceField, FieldOrigin>>;
   property: ConfirmedProperty;
   asking_price: number;
   currency: string;
@@ -88,6 +155,11 @@ export class AnalysesService {
 
   getSupportedCities(): Observable<City[]> {
     return this.http.get<City[]>(`${this.baseUrl}/cities`);
+  }
+
+  /** Proposes property details from a listing link or pasted text. Nothing is saved. */
+  extractListing(request: ExtractionRequest): Observable<ExtractionResult> {
+    return this.http.post<ExtractionResult>(`${this.baseUrl}/extractions`, request);
   }
 
   createAnalysis(request: PropertyAnalysisRequest): Observable<AnalysisDetail> {

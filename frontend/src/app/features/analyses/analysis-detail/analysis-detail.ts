@@ -15,6 +15,7 @@ import {
   STATUS_LABELS,
   STRUCTURE_LABELS,
 } from '../../../shared/property-labels';
+import { OriginTag } from '../../../shared/origin-tag';
 
 type DetailState =
   | { status: 'loading' }
@@ -24,7 +25,7 @@ type DetailState =
 /** One saved analysis, shown exactly as it was stored when it was created. */
 @Component({
   selector: 'app-analysis-detail',
-  imports: [RouterLink, CurrencyPipe, DatePipe, DecimalPipe],
+  imports: [RouterLink, CurrencyPipe, DatePipe, DecimalPipe, OriginTag],
   templateUrl: './analysis-detail.html',
   styleUrl: './analysis-detail.scss',
 })

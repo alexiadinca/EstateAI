@@ -4,17 +4,21 @@ import { Component, computed, DestroyRef, ElementRef, inject, signal } from '@an
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { startWith } from 'rxjs';
+import { map, startWith } from 'rxjs';
 
 import { describeApiError } from '../../../core/api/api-errors';
 import {
   AnalysesService,
   BuildingStructure,
   City,
+  ExtractionResult,
+  FieldOrigin,
   PropertyAnalysisRequest,
   PropertyCondition,
   PropertyType,
+  ProvenanceField,
 } from '../../../core/api/analyses.service';
+import { OriginTag } from '../../../shared/origin-tag';
 import {
   amenityLabel,
   CONDITION_LABELS,
@@ -27,8 +31,13 @@ import { notBlank } from '../../../shared/validators';
 import {
   AmenityChoice,
   atMostTwoDecimals,
+  currentFieldProvenance,
+  extractionToFormValue,
   floorWithinBuilding,
+  ImportContext,
   LIMITS,
+  MANUAL_ENTRY,
+  PropertyFormValue,
   toAnalysisRequest,
   wholeNumber,
 } from './property-form';
@@ -36,6 +45,12 @@ import {
 type CitiesState =
   | { status: 'loading' }
   | { status: 'loaded'; cities: City[] }
+  | { status: 'error'; message: string };
+
+type ImportState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'imported'; result: ExtractionResult }
   | { status: 'error'; message: string };
 
 type FieldName =
@@ -48,13 +63,17 @@ type FieldName =
   | 'constructionYear'
   | 'askingPrice';
 
+const MIN_PASTED_TEXT_LENGTH = 30;
+const MAX_PASTED_TEXT_LENGTH = 20_000;
+
 /**
- * Manual property entry in two steps: the user fills in the details, reviews them,
- * and only then saves. Values are kept when the user goes back or when saving fails.
+ * Property entry in two steps: the user fills in the details, optionally starting from a
+ * listing link or pasted listing text, reviews them, and only then saves. Values are kept
+ * when the user goes back or when saving fails.
  */
 @Component({
   selector: 'app-new-property',
-  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe, DecimalPipe],
+  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe, DecimalPipe, OriginTag],
   templateUrl: './new-property.html',
   styleUrl: './new-property.scss',
 })
@@ -78,6 +97,11 @@ export class NewProperty {
     { value: 'yes', label: 'Yes' },
     { value: 'no', label: 'No' },
   ];
+
+  /** A listing link or the pasted text of a listing. */
+  protected readonly listingInput = this.formBuilder.control('', [
+    Validators.maxLength(MAX_PASTED_TEXT_LENGTH),
+  ]);
 
   protected readonly form = this.formBuilder.group(
     {
@@ -129,6 +153,7 @@ export class NewProperty {
   );
 
   protected readonly citiesState = signal<CitiesState>({ status: 'loading' });
+  protected readonly importState = signal<ImportState>({ status: 'idle' });
   protected readonly step = signal<'details' | 'review'>('details');
   protected readonly submitted = signal(false);
   protected readonly saving = signal(false);
@@ -136,13 +161,26 @@ export class NewProperty {
   /** The request shown on the review step and sent when the user confirms. */
   protected readonly reviewedRequest = signal<PropertyAnalysisRequest | null>(null);
 
-  protected readonly propertyType = toSignal(
-    this.form.controls.propertyType.valueChanges.pipe(
-      startWith(this.form.controls.propertyType.value),
+  /** Values and origins exactly as the listing proposed them, to detect corrections. */
+  private readonly importedValues = signal<Partial<PropertyFormValue>>({});
+  private readonly importedOrigins = signal<
+    Partial<Record<ProvenanceField, 'listing' | 'description'>>
+  >({});
+
+  private readonly formValue = toSignal(
+    this.form.valueChanges.pipe(
+      startWith(null),
+      map(() => this.form.getRawValue()),
     ),
     { requireSync: true },
   );
-  protected readonly isHouse = computed(() => this.propertyType() === 'house');
+
+  /** Current origin of every imported field: from the listing, the description, or corrected. */
+  protected readonly fieldProvenance = computed(() =>
+    currentFieldProvenance(this.importedOrigins(), this.importedValues(), this.formValue()),
+  );
+
+  protected readonly isHouse = computed(() => this.formValue().propertyType === 'house');
 
   protected readonly reviewedCity = computed(() => {
     const request = this.reviewedRequest();
@@ -191,13 +229,54 @@ export class NewProperty {
     });
   }
 
+  /** Reads the pasted link or text and proposes values for the form. Nothing is saved. */
+  protected importListing(): void {
+    const pasted = this.listingInput.value.trim();
+    const isLink = /^https?:\/\//i.test(pasted);
+    if (!pasted) {
+      this.importState.set({ status: 'error', message: 'Paste a listing link or its text.' });
+      return;
+    }
+    if (!isLink && pasted.length < MIN_PASTED_TEXT_LENGTH) {
+      this.importState.set({
+        status: 'error',
+        message: 'Paste the complete listing text, or a link from storia.ro or olx.ro.',
+      });
+      return;
+    }
+    if (this.importState().status === 'loading') {
+      return;
+    }
+
+    this.importState.set({ status: 'loading' });
+    this.analysesService.extractListing(isLink ? { url: pasted } : { text: pasted }).subscribe({
+      next: (result) => this.applyImport(result),
+      error: (error: HttpErrorResponse) =>
+        this.importState.set({ status: 'error', message: describeImportError(error) }),
+    });
+  }
+
+  /** Clears the imported values so the property can be entered manually. */
+  protected clearImport(): void {
+    this.form.reset();
+    this.listingInput.reset();
+    this.importedValues.set({});
+    this.importedOrigins.set({});
+    this.importState.set({ status: 'idle' });
+    this.submitted.set(false);
+  }
+
+  protected originOf(field: ProvenanceField): FieldOrigin | null {
+    return this.fieldProvenance()[field] ?? null;
+  }
+
+  protected importedCount(result: ExtractionResult): number {
+    return Object.keys(result.provenance).length;
+  }
+
   protected showError(field: FieldName): boolean {
     const control = this.form.controls[field];
     return control.invalid && (control.touched || this.submitted());
-  }
-
-  protected hasError(field: FieldName, errorCode: string): boolean {
-    return this.form.controls[field].hasError(errorCode);
   }
 
   protected showFloorAboveBuilding(): boolean {
@@ -214,7 +293,7 @@ export class NewProperty {
       this.focusFirstInvalidField();
       return;
     }
-    this.reviewedRequest.set(toAnalysisRequest(this.form.getRawValue()));
+    this.reviewedRequest.set(toAnalysisRequest(this.form.getRawValue(), this.importContext()));
     this.step.set('review');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -240,6 +319,31 @@ export class NewProperty {
     });
   }
 
+  /** Replaces the form with the proposed values. Unstated details stay empty. */
+  private applyImport(result: ExtractionResult): void {
+    const proposed = extractionToFormValue(result.values);
+    this.form.reset();
+    // The property type goes first, so house-specific fields are disabled before filling.
+    this.form.controls.propertyType.setValue(proposed.propertyType ?? 'apartment');
+    this.form.patchValue(proposed);
+    this.importedValues.set(proposed);
+    this.importedOrigins.set(result.provenance);
+    this.importState.set({ status: 'imported', result });
+    this.submitted.set(false);
+  }
+
+  private importContext(): ImportContext {
+    const state = this.importState();
+    if (state.status !== 'imported') {
+      return MANUAL_ENTRY;
+    }
+    return {
+      inputSource: state.result.input_source,
+      source: state.result.source,
+      fieldProvenance: this.fieldProvenance(),
+    };
+  }
+
   /** Moves keyboard focus to the first field that needs a correction. */
   private focusFirstInvalidField(): void {
     // Waits one tick so the error states rendered by this submit are in the page.
@@ -247,6 +351,18 @@ export class NewProperty {
       this.elementRef.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
     });
   }
+}
+
+/** The server explains unsupported links and unreadable pages in a message for the user. */
+function describeImportError(error: HttpErrorResponse): string {
+  const detail: unknown = error.error?.detail;
+  if ((error.status === 422 || error.status === 502) && typeof detail === 'string') {
+    return detail;
+  }
+  if (error.status === 422) {
+    return 'Paste a link from storia.ro or olx.ro, or the complete listing text.';
+  }
+  return describeApiError(error);
 }
 
 /** Shows the server's validation message when it explains what to correct. */

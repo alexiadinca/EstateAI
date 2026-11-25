@@ -74,6 +74,13 @@
     background: var(--color-success-surface);
     border: var(--border-width) solid var(--color-success);
   }
+
+  // Information the user should read, without signalling an error.
+  &--notice {
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-accent);
+  }
 }
 
 .button {

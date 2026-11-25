@@ -8,8 +8,8 @@
       <span class="eyebrow">New analysis</span>
       <h1>Analyze a property</h1>
       <p class="page-intro">
-        Enter what you know about the property. Leave a detail empty if the listing does not mention
-        it; it will be saved as not stated.
+        Start from a listing, or enter what you know about the property. Leave a detail empty if the
+        listing does not mention it; it will be saved as not stated.
       </p>
     </div>
   </header>
@@ -33,6 +33,83 @@
   </ol>
 
   @if (step() === 'details') {
+    @let importing = importState();
+
+    <section class="card import-card" aria-labelledby="import-heading">
+      <div class="import-card__intro">
+        <span class="eyebrow">Optional</span>
+        <h2 id="import-heading" class="section-title">Start from a listing</h2>
+        <p class="muted">
+          Paste a link from <strong>storia.ro</strong> or <strong>olx.ro</strong>, or paste the text
+          of any listing, for example from imobiliare.ro. The details found are filled in below for
+          you to check. Nothing is saved until you confirm.
+        </p>
+      </div>
+
+      <div class="import-card__input">
+        <label class="visually-hidden" for="listing-input">Listing link or listing text</label>
+        <textarea
+          id="listing-input"
+          class="field-input import-card__textarea"
+          rows="3"
+          [formControl]="listingInput"
+          placeholder="https://www.storia.ro/ro/oferta/…   or paste the listing description"
+          aria-describedby="import-status"
+        ></textarea>
+        <div class="import-card__actions">
+          @if (importing.status === 'imported') {
+            <button class="button button--secondary" type="button" (click)="clearImport()">
+              Clear and enter manually
+            </button>
+          }
+          <button
+            class="button button--primary"
+            type="button"
+            (click)="importListing()"
+            [disabled]="importing.status === 'loading'"
+          >
+            {{ importing.status === 'loading' ? 'Reading the listing…' : 'Get details' }}
+          </button>
+        </div>
+      </div>
+
+      <div id="import-status" aria-live="polite">
+        @if (importing.status === 'error') {
+          <p class="alert alert--error" role="alert">{{ importing.message }}</p>
+        } @else if (importing.status === 'imported') {
+          @let result = importing.result;
+          <div class="import-summary">
+            <p class="import-summary__headline">
+              Found {{ importedCount(result) }}
+              {{ importedCount(result) === 1 ? 'detail' : 'details' }}
+              {{ result.source.site ? 'on ' + result.source.site : 'in the pasted text' }}. Check
+              them below; empty fields were not mentioned.
+            </p>
+            @if (result.source.title) {
+              <p class="muted import-summary__title">“{{ result.source.title }}”</p>
+            }
+            @if (result.monthly_rent !== null) {
+              <p class="muted">
+                Monthly rent in the listing:
+                {{
+                  result.monthly_rent
+                    | currency: result.monthly_rent_currency ?? 'EUR' : 'symbol' : '1.0-0'
+                }}
+              </p>
+            }
+            @for (notice of result.notices; track notice) {
+              <p class="alert alert--notice">{{ notice }}</p>
+            }
+            <p class="import-summary__legend">
+              <app-origin-tag [origin]="'listing'" /> read from the website's data
+              <app-origin-tag [origin]="'description'" /> read from the seller's text
+              <app-origin-tag [origin]="'corrected'" /> changed by you
+            </p>
+          </div>
+        }
+      </div>
+    </section>
+
     <form class="entry-form" [formGroup]="form" (ngSubmit)="goToReview()" novalidate>
       <!-- Location -->
       <section class="card form-section" aria-labelledby="location-heading">
@@ -56,7 +133,9 @@
 
         <div class="field-row">
           <div class="field">
-            <label class="field-label" for="property-city">City</label>
+            <label class="field-label" for="property-city"
+              >City <app-origin-tag [origin]="originOf('city_id')"
+            /></label>
             <select
               id="property-city"
               class="field-input field-select"
@@ -79,7 +158,9 @@
           </div>
 
           <div class="field">
-            <label class="field-label" for="property-neighborhood">Neighborhood</label>
+            <label class="field-label" for="property-neighborhood"
+              >Neighborhood <app-origin-tag [origin]="originOf('neighborhood')"
+            /></label>
             <input
               id="property-neighborhood"
               class="field-input"
@@ -107,7 +188,9 @@
         </header>
 
         <fieldset class="fieldset">
-          <legend class="field-label">Property type</legend>
+          <legend class="field-label">
+            Property type<app-origin-tag [origin]="originOf('property_type')" />
+          </legend>
           <div class="segmented">
             <label>
               <input type="radio" formControlName="propertyType" value="apartment" />
@@ -122,7 +205,9 @@
 
         <div class="field-row">
           <div class="field">
-            <label class="field-label" for="property-area">Usable area</label>
+            <label class="field-label" for="property-area"
+              >Usable area <app-origin-tag [origin]="originOf('usable_area_m2')"
+            /></label>
             <div class="input-affix">
               <input
                 id="property-area"
@@ -147,7 +232,9 @@
           </div>
 
           <div class="field">
-            <label class="field-label" for="property-rooms">Rooms</label>
+            <label class="field-label" for="property-rooms"
+              >Rooms <app-origin-tag [origin]="originOf('rooms')"
+            /></label>
             <input
               id="property-rooms"
               class="field-input"
@@ -168,10 +255,12 @@
           </div>
         </div>
 
-        <div class="field-row">
+        <div class="field-row field-row--three">
           @if (!isHouse()) {
             <div class="field">
-              <label class="field-label" for="property-floor">Floor</label>
+              <label class="field-label" for="property-floor"
+                >Floor <app-origin-tag [origin]="originOf('floor')"
+              /></label>
               <input
                 id="property-floor"
                 class="field-input"
@@ -200,7 +289,8 @@
           <div class="field">
             <label class="field-label" for="property-total-floors">
               {{ isHouse() ? 'Number of floors' : 'Floors in the building' }}
-            </label>
+              <app-origin-tag [origin]="originOf('total_floors')"
+            /></label>
             <input
               id="property-total-floors"
               class="field-input"
@@ -221,7 +311,9 @@
           </div>
 
           <div class="field">
-            <label class="field-label" for="property-year">Construction year</label>
+            <label class="field-label" for="property-year"
+              >Construction year <app-origin-tag [origin]="originOf('construction_year')"
+            /></label>
             <input
               id="property-year"
               class="field-input"
@@ -249,7 +341,9 @@
 
         <div class="field-row">
           <div class="field">
-            <label class="field-label" for="property-structure">Structure</label>
+            <label class="field-label" for="property-structure"
+              >Structure <app-origin-tag [origin]="originOf('structure')"
+            /></label>
             <select
               id="property-structure"
               class="field-input field-select"
@@ -263,7 +357,9 @@
           </div>
 
           <div class="field">
-            <label class="field-label" for="property-condition">Condition</label>
+            <label class="field-label" for="property-condition"
+              >Condition <app-origin-tag [origin]="originOf('condition')"
+            /></label>
             <select
               id="property-condition"
               class="field-input field-select"
@@ -280,7 +376,9 @@
         <div class="amenities">
           @if (!isHouse()) {
             <fieldset class="fieldset">
-              <legend class="field-label">Lift</legend>
+              <legend class="field-label">
+                Lift<app-origin-tag [origin]="originOf('has_elevator')" />
+              </legend>
               <div class="segmented segmented--compact">
                 @for (choice of amenityChoices; track choice.value) {
                   <label>
@@ -293,7 +391,9 @@
           }
 
           <fieldset class="fieldset">
-            <legend class="field-label">Balcony</legend>
+            <legend class="field-label">
+              Balcony<app-origin-tag [origin]="originOf('has_balcony')" />
+            </legend>
             <div class="segmented segmented--compact">
               @for (choice of amenityChoices; track choice.value) {
                 <label>
@@ -305,7 +405,9 @@
           </fieldset>
 
           <fieldset class="fieldset">
-            <legend class="field-label">Parking</legend>
+            <legend class="field-label">
+              Parking<app-origin-tag [origin]="originOf('has_parking')" />
+            </legend>
             <div class="segmented segmented--compact">
               @for (choice of amenityChoices; track choice.value) {
                 <label>
@@ -332,7 +434,9 @@
         </header>
 
         <div class="field price-field">
-          <label class="field-label" for="property-price">Asking price</label>
+          <label class="field-label" for="property-price"
+            >Asking price <app-origin-tag [origin]="originOf('asking_price')"
+          /></label>
           <div class="input-affix">
             <span class="input-affix__unit" aria-hidden="true">€</span>
             <input
@@ -374,7 +478,9 @@
             <p class="muted">{{ request.neighborhood }}, {{ reviewedCity()?.name }}</p>
           </div>
           <div class="review__price">
-            <span class="eyebrow">Asking price</span>
+            <span class="eyebrow"
+              >Asking price<app-origin-tag [origin]="request.field_provenance.asking_price"
+            /></span>
             <span class="figure review__price-value">{{
               request.asking_price | currency: 'EUR' : 'symbol' : '1.0-2'
             }}</span>
@@ -383,19 +489,23 @@
 
         <dl class="detail-list">
           <div>
-            <dt>Property type</dt>
+            <dt>
+              Property type<app-origin-tag [origin]="request.field_provenance.property_type" />
+            </dt>
             <dd>{{ request.property_type === 'house' ? 'House' : 'Apartment' }}</dd>
           </div>
           <div>
-            <dt>Usable area</dt>
+            <dt>
+              Usable area<app-origin-tag [origin]="request.field_provenance.usable_area_m2" />
+            </dt>
             <dd>{{ request.usable_area_m2 | number: '1.0-2' }} m²</dd>
           </div>
           <div>
-            <dt>Rooms</dt>
+            <dt>Rooms<app-origin-tag [origin]="request.field_provenance.rooms" /></dt>
             <dd>{{ request.rooms }}</dd>
           </div>
           <div>
-            <dt>Floor</dt>
+            <dt>Floor<app-origin-tag [origin]="request.field_provenance.floor" /></dt>
             <dd [class.not-stated]="request.floor === null">
               {{ floorLabel(request.property_type, request.floor) }}
             </dd>
@@ -403,31 +513,36 @@
           <div>
             <dt>
               {{ request.property_type === 'house' ? 'Number of floors' : 'Floors in building' }}
+              <app-origin-tag [origin]="request.field_provenance.total_floors" />
             </dt>
             <dd [class.not-stated]="request.total_floors === null">
               {{ request.total_floors ?? notStated }}
             </dd>
           </div>
           <div>
-            <dt>Construction year</dt>
+            <dt>
+              Construction year<app-origin-tag
+                [origin]="request.field_provenance.construction_year"
+              />
+            </dt>
             <dd [class.not-stated]="request.construction_year === null">
               {{ request.construction_year ?? notStated }}
             </dd>
           </div>
           <div>
-            <dt>Structure</dt>
+            <dt>Structure<app-origin-tag [origin]="request.field_provenance.structure" /></dt>
             <dd [class.not-stated]="!request.structure">
               {{ request.structure ? structureLabels[request.structure] : notStated }}
             </dd>
           </div>
           <div>
-            <dt>Condition</dt>
+            <dt>Condition<app-origin-tag [origin]="request.field_provenance.condition" /></dt>
             <dd [class.not-stated]="!request.condition">
               {{ request.condition ? conditionLabels[request.condition] : notStated }}
             </dd>
           </div>
           <div>
-            <dt>Lift</dt>
+            <dt>Lift<app-origin-tag [origin]="request.field_provenance.has_elevator" /></dt>
             <dd [class.not-stated]="request.has_elevator === null">
               {{
                 request.property_type === 'house'
@@ -437,13 +552,13 @@
             </dd>
           </div>
           <div>
-            <dt>Balcony</dt>
+            <dt>Balcony<app-origin-tag [origin]="request.field_provenance.has_balcony" /></dt>
             <dd [class.not-stated]="request.has_balcony === null">
               {{ amenityLabel(request.has_balcony) }}
             </dd>
           </div>
           <div>
-            <dt>Parking</dt>
+            <dt>Parking<app-origin-tag [origin]="request.field_provenance.has_parking" /></dt>
             <dd [class.not-stated]="request.has_parking === null">
               {{ amenityLabel(request.has_parking) }}
             </dd>
