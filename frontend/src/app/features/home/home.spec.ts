@@ -1,14 +1,13 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { Home, START_ANALYSIS_URL } from './home';
-import { INTRO_PLAYED_KEY, shouldPlayIntro } from './intro-splash';
+import { isFirstPageLoad, shouldPlayIntro } from './intro-splash';
 
+// Components created by TestBed are not part of a navigation, so the intro does not play here.
 function renderHome(signedIn: boolean): HTMLElement {
-  // The intro is covered by its own tests; here it is marked as already played.
-  sessionStorage.setItem(INTRO_PLAYED_KEY, 'true');
   TestBed.configureTestingModule({
     imports: [Home],
     providers: [
@@ -26,8 +25,6 @@ function linkByText(page: HTMLElement, text: string): HTMLAnchorElement | undefi
 }
 
 describe('Home', () => {
-  afterEach(() => sessionStorage.clear());
-
   it('sends a visitor towards Analyze a property, which asks for sign-in first', () => {
     const page = renderHome(false);
 
@@ -62,7 +59,7 @@ describe('Home', () => {
     expect(page.querySelector('.preview__caption')?.textContent).toContain('not a live');
   });
 
-  it('does not show the opening animation once it has played in this tab', () => {
+  it('does not show the opening animation when reached from inside the application', () => {
     const page = renderHome(false);
 
     expect(page.querySelector('app-intro-splash')).toBeNull();
@@ -78,25 +75,41 @@ describe('shouldPlayIntro', () => {
 
   afterEach(() => {
     window.matchMedia = originalMatchMedia;
-    sessionStorage.clear();
   });
 
-  it('plays on the first visit in a tab', () => {
+  it('plays every time the home page is loaded or refreshed', () => {
     preferReducedMotion(false);
 
-    expect(shouldPlayIntro()).toBe(true);
+    expect(shouldPlayIntro(true)).toBe(true);
   });
 
-  it('does not play again in the same tab', () => {
+  it('does not play after a navigation inside the application', () => {
     preferReducedMotion(false);
-    sessionStorage.setItem(INTRO_PLAYED_KEY, 'true');
 
-    expect(shouldPlayIntro()).toBe(false);
+    expect(shouldPlayIntro(false)).toBe(false);
   });
 
   it('never plays when the visitor asks to reduce motion', () => {
     preferReducedMotion(true);
 
-    expect(shouldPlayIntro()).toBe(false);
+    expect(shouldPlayIntro(true)).toBe(false);
+  });
+});
+
+describe('isFirstPageLoad', () => {
+  function routerDuring(navigation: unknown): Router {
+    return { currentNavigation: signal(navigation) } as unknown as Router;
+  }
+
+  it('recognises the first navigation after a page load or refresh', () => {
+    expect(isFirstPageLoad(routerDuring({ previousNavigation: null }))).toBe(true);
+  });
+
+  it('recognises a later navigation, such as a click on the logo', () => {
+    expect(isFirstPageLoad(routerDuring({ previousNavigation: {} }))).toBe(false);
+  });
+
+  it('is false outside a navigation', () => {
+    expect(isFirstPageLoad(routerDuring(null))).toBe(false);
   });
 });

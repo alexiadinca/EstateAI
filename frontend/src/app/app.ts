@@ -33,7 +33,7 @@ export class App {
     this.signOutError.set(null);
     try {
       await this.auth.signOut();
-      await this.router.navigateByUrl('/sign-in');
+      await this.router.navigateByUrl('/');
     } catch (error) {
       this.signOutError.set(
         error instanceof AuthFailure ? error.message : 'Sign-out failed. Try again.',

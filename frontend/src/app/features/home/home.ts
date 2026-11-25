@@ -1,8 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { IntroSplash, shouldPlayIntro } from './intro-splash';
+import { IntroSplash, isFirstPageLoad, shouldPlayIntro } from './intro-splash';
 
 /**
  * Where "Start analyzing" leads. The route requires sign-in, so visitors are sent to the
@@ -33,7 +33,7 @@ export class Home {
 
   protected readonly startUrl = START_ANALYSIS_URL;
   /** Decided once, so the hero waits for the intro only when the intro actually plays. */
-  protected readonly introPlayed = shouldPlayIntro();
+  protected readonly introPlayed = shouldPlayIntro(isFirstPageLoad(inject(Router)));
   protected readonly introVisible = signal(this.introPlayed);
 
   // The status lines describe the current prototype and must be updated as features arrive.
