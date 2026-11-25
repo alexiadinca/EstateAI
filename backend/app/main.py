@@ -3,11 +3,22 @@
 Run locally with: uv run uvicorn app.main:app --reload
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from app.api.routes import health
+from app.api.routes import health, users
 from app.core.config import get_settings
+from app.db.session import DatabaseNotConfiguredError
+
+
+def handle_database_not_configured(
+    request: Request, error: DatabaseNotConfiguredError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": "The database is not configured. Set DATABASE_URL in backend/.env."},
+    )
 
 
 def create_app() -> FastAPI:
@@ -28,7 +39,10 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.add_exception_handler(DatabaseNotConfiguredError, handle_database_not_configured)
+
     app.include_router(health.router)
+    app.include_router(users.router)
 
     return app
 
