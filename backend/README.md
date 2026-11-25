@@ -10,6 +10,16 @@ copy .env.example .env
 uv sync
 ```
 
+## Database
+
+Set `DATABASE_URL` in `.env` to the Supabase Session pooler connection string, then:
+
+```powershell
+uv run python -m app.db.check_connection   # prints the PostgreSQL version, never the URL
+uv run alembic upgrade head                # creates or updates the tables
+uv run alembic check                       # confirms the models match the database
+```
+
 ## Run the API
 
 ```powershell
