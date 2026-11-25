@@ -1,0 +1,50 @@
+<section class="auth-page">
+  <div class="card auth-card">
+    <h1>Sign in</h1>
+    <p class="auth-intro">Open your saved property analyses.</p>
+
+    <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (errorMessage(); as message) {
+        <p class="alert alert--error" role="alert">{{ message }}</p>
+      }
+
+      <div class="field">
+        <label class="field-label" for="sign-in-email">Email</label>
+        <input
+          id="sign-in-email"
+          class="field-input"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          [attr.aria-invalid]="showError('email')"
+          aria-describedby="sign-in-email-error"
+        />
+        @if (showError('email')) {
+          <p class="field-error" id="sign-in-email-error">Enter a valid email address.</p>
+        }
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="sign-in-password">Password</label>
+        <input
+          id="sign-in-password"
+          class="field-input"
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+          [attr.aria-invalid]="showError('password')"
+          aria-describedby="sign-in-password-error"
+        />
+        @if (showError('password')) {
+          <p class="field-error" id="sign-in-password-error">Enter your password.</p>
+        }
+      </div>
+
+      <button class="button button--primary" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Signing in…' : 'Sign in' }}
+      </button>
+    </form>
+
+    <p class="auth-switch">New to EstateAI? <a routerLink="/register">Create an account</a></p>
+  </div>
+</section>

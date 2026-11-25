@@ -1,0 +1,28 @@
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="wordmark" [routerLink]="auth.isSignedIn() ? signedInHome : '/sign-in'">EstateAI</a>
+
+    @if (auth.isSignedIn()) {
+      <div class="session">
+        <span class="session__email">{{ auth.userEmail() }}</span>
+        <button class="session__sign-out" type="button" (click)="signOut()">Sign out</button>
+      </div>
+    }
+  </div>
+  @if (signOutError(); as message) {
+    <p class="site-header__error" role="alert">{{ message }}</p>
+  }
+</header>
+
+<main id="main-content" class="site-main">
+  <router-outlet />
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <span class="wordmark wordmark--small">EstateAI</span>
+    <span>Property valuation and investment decision support</span>
+  </div>
+</footer>
