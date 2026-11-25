@@ -1,0 +1,75 @@
+<section class="page">
+  @let current = state();
+
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Workspace</span>
+      <h1>My analyses</h1>
+      <p class="page-intro">
+        Every property you analyze is saved here with the details you confirmed and the results
+        produced at that time.
+      </p>
+    </div>
+    @if (current.status === 'loaded' && current.analyses.length > 0) {
+      <a class="button button--primary" routerLink="/analyses/new">Analyze a property</a>
+    }
+  </header>
+
+  @if (current.status === 'loading') {
+    <p class="muted" role="status">Loading your analyses…</p>
+  } @else if (current.status === 'error') {
+    <div class="card state-card">
+      <p class="alert alert--error" role="alert">{{ current.message }}</p>
+      <button class="button button--secondary" type="button" (click)="loadAnalyses()">
+        Try again
+      </button>
+    </div>
+  } @else if (current.analyses.length === 0) {
+    <div class="card empty-state">
+      <span class="eyebrow">Start here</span>
+      <h2>Analyze your first property</h2>
+      <p class="muted">
+        Enter the details of an apartment or a house you are considering. You will review them
+        before anything is saved.
+      </p>
+      <a class="button button--primary" routerLink="/analyses/new">Analyze a property</a>
+    </div>
+  } @else {
+    <p class="muted list-count">
+      {{ current.analyses.length }}
+      {{ current.analyses.length === 1 ? 'saved analysis' : 'saved analyses' }}
+    </p>
+
+    <ul class="analysis-list">
+      @for (analysis of current.analyses; track analysis.analysis_id) {
+        <li>
+          <a class="analysis-row" [routerLink]="['/analyses', analysis.analysis_id]">
+            <span class="analysis-row__property">
+              <span class="analysis-row__title">
+                {{ propertyHeadline(analysis.property_type, analysis.rooms) }} ·
+                {{ analysis.usable_area_m2 | number: '1.0-2' }} m²
+              </span>
+              <span class="analysis-row__location"
+                >{{ analysis.neighborhood }}, {{ analysis.city }}</span
+              >
+            </span>
+
+            <span class="analysis-row__price">
+              <span class="analysis-row__label">Asking price</span>
+              <span class="figure">{{
+                analysis.asking_price | currency: analysis.currency : 'symbol' : '1.0-0'
+              }}</span>
+            </span>
+
+            <span class="analysis-row__meta">
+              <span class="badge" [class]="'badge--' + analysis.status">{{
+                statusLabels[analysis.status]
+              }}</span>
+              <span class="analysis-row__date">{{ analysis.created_at | date: 'd MMM y' }}</span>
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>

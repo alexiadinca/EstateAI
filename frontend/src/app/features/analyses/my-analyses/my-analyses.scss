@@ -1,0 +1,111 @@
+.state-card {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+}
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-6);
+  text-align: center;
+
+  h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  p {
+    max-width: 30rem;
+    margin-bottom: var(--space-3);
+  }
+}
+
+.list-count {
+  font-size: var(--font-size-sm);
+  margin-bottom: calc(-1 * var(--space-3));
+}
+
+.analysis-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.analysis-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6);
+  color: inherit;
+  text-decoration: none;
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-1px);
+  }
+}
+
+.analysis-row__property,
+.analysis-row__price {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.analysis-row__title {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-lg);
+}
+
+.analysis-row__location,
+.analysis-row__label,
+.analysis-row__date {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.analysis-row__price .figure {
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+}
+
+.analysis-row__meta {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-2);
+}
+
+@media (max-width: 44rem) {
+  .analysis-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .analysis-row__meta {
+    justify-items: start;
+    grid-auto-flow: column;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analysis-row {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}

@@ -1,0 +1,239 @@
+<section class="page">
+  <div>
+    <a class="back-link" routerLink="/analyses">← My analyses</a>
+  </div>
+
+  @let current = state();
+
+  @if (current.status === 'loading') {
+    <p class="muted" role="status">Loading the analysis…</p>
+  } @else if (current.status === 'error') {
+    <div class="card state-card">
+      <p class="alert alert--error" role="alert">{{ current.message }}</p>
+      <div class="state-card__actions">
+        <a class="button button--secondary" routerLink="/analyses">Back to my analyses</a>
+        <button class="button button--primary" type="button" (click)="loadAnalysis()">
+          Try again
+        </button>
+      </div>
+    </div>
+  } @else {
+    @let analysis = current.analysis;
+    @let property = analysis.property;
+    @let valuation = analysis.valuation;
+    @let hasEstimate =
+      valuation.status === 'completed' && valuation.estimated_reference_price !== null;
+
+    <header class="page-header">
+      <div>
+        <span class="eyebrow">Property analysis</span>
+        <h1>{{ propertyHeadline(property.property_type, property.rooms) }}</h1>
+        <p class="page-intro">
+          {{ property.neighborhood }}, {{ property.city }} ·
+          {{ property.usable_area_m2 | number: '1.0-2' }} m²
+        </p>
+      </div>
+      <span class="badge" [class]="'badge--' + valuation.status">{{
+        statusLabels[valuation.status]
+      }}</span>
+    </header>
+
+    <!-- The answer comes first: asking price, estimate and difference side by side. -->
+    <section class="card verdict" aria-labelledby="verdict-heading">
+      <h2 id="verdict-heading" class="verdict__headline">
+        @if (hasEstimate && valuation.price_difference_pct !== null) {
+          {{ describePriceDifference(valuation.price_difference_pct) }}
+        } @else {
+          An estimated reference price is not available for this property yet.
+        }
+      </h2>
+
+      <div class="figures">
+        <div class="figures__item">
+          <span class="figures__label">Asking price</span>
+          <span class="figures__value figure">{{
+            analysis.asking_price | currency: analysis.currency : 'symbol' : '1.0-0'
+          }}</span>
+          <span class="figures__note figure"
+            >{{
+              analysis.asking_price_per_m2 | currency: analysis.currency : 'symbol' : '1.0-0'
+            }}
+            per m² · from the listing</span
+          >
+        </div>
+
+        <div class="figures__item">
+          <span class="figures__label">Estimated reference price</span>
+          @if (hasEstimate) {
+            <span class="figures__value figure">{{
+              valuation.estimated_reference_price | currency: analysis.currency : 'symbol' : '1.0-0'
+            }}</span>
+            <span class="figures__note figure"
+              >{{
+                valuation.estimated_price_per_m2 | currency: analysis.currency : 'symbol' : '1.0-0'
+              }}
+              per m² · model estimate</span
+            >
+          } @else {
+            <span class="figures__value figures__value--empty">Not available</span>
+            <span class="figures__note">No estimate was produced</span>
+          }
+        </div>
+
+        <div class="figures__item">
+          <span class="figures__label">Difference</span>
+          @if (
+            hasEstimate &&
+            valuation.price_difference_eur !== null &&
+            valuation.price_difference_pct !== null
+          ) {
+            <span class="figures__value figure"
+              >{{ valuation.price_difference_eur > 0 ? '+' : ''
+              }}{{
+                valuation.price_difference_eur | currency: analysis.currency : 'symbol' : '1.0-0'
+              }}</span
+            >
+            <span class="figures__note figure"
+              >{{ valuation.price_difference_pct > 0 ? '+' : ''
+              }}{{ valuation.price_difference_pct | number: '1.2-2' }}%
+              {{
+                valuation.price_difference_pct > 0
+                  ? 'above'
+                  : valuation.price_difference_pct < 0
+                    ? 'below'
+                    : 'equal to'
+              }}
+              the estimate</span
+            >
+          } @else {
+            <span class="figures__value figures__value--empty">—</span>
+            <span class="figures__note">Requires an estimate</span>
+          }
+        </div>
+      </div>
+
+      @if (!hasEstimate && valuation.reason) {
+        <div class="verdict__reason">
+          <span class="eyebrow">Why</span>
+          <p>{{ valuation.reason }}</p>
+          <p class="muted">
+            The property and its details are saved and can be reopened at any time.
+          </p>
+        </div>
+      }
+
+      <p class="verdict__explainer">
+        The estimated reference price is predicted from the asking prices of similar listings. It
+        describes the listing market, not completed sale prices.
+      </p>
+    </section>
+
+    <div class="detail-grid">
+      <section class="card" aria-labelledby="details-heading">
+        <h2 id="details-heading" class="section-title card-title">Confirmed details</h2>
+        <dl class="detail-list detail-list--single">
+          <div>
+            <dt>Location</dt>
+            <dd>{{ property.neighborhood }}, {{ property.city }}</dd>
+          </div>
+          <div>
+            <dt>Property type</dt>
+            <dd>{{ property.property_type === 'house' ? 'House' : 'Apartment' }}</dd>
+          </div>
+          <div>
+            <dt>Usable area</dt>
+            <dd>{{ property.usable_area_m2 | number: '1.0-2' }} m²</dd>
+          </div>
+          <div>
+            <dt>Rooms</dt>
+            <dd>{{ property.rooms }}</dd>
+          </div>
+          <div>
+            <dt>Floor</dt>
+            <dd [class.not-stated]="property.floor === null">
+              {{ floorLabel(property.property_type, property.floor) }}
+            </dd>
+          </div>
+          <div>
+            <dt>
+              {{ property.property_type === 'house' ? 'Number of floors' : 'Floors in building' }}
+            </dt>
+            <dd [class.not-stated]="property.total_floors === null">
+              {{ property.total_floors ?? notStated }}
+            </dd>
+          </div>
+          <div>
+            <dt>Construction year</dt>
+            <dd [class.not-stated]="property.construction_year === null">
+              {{ property.construction_year ?? notStated }}
+            </dd>
+          </div>
+          <div>
+            <dt>Structure</dt>
+            <dd [class.not-stated]="!property.structure">
+              {{ property.structure ? structureLabels[property.structure] : notStated }}
+            </dd>
+          </div>
+          <div>
+            <dt>Condition</dt>
+            <dd [class.not-stated]="!property.condition">
+              {{ property.condition ? conditionLabels[property.condition] : notStated }}
+            </dd>
+          </div>
+          <div>
+            <dt>Lift</dt>
+            <dd [class.not-stated]="property.has_elevator === null">
+              {{
+                property.property_type === 'house'
+                  ? 'Not applicable'
+                  : amenityLabel(property.has_elevator)
+              }}
+            </dd>
+          </div>
+          <div>
+            <dt>Balcony</dt>
+            <dd [class.not-stated]="property.has_balcony === null">
+              {{ amenityLabel(property.has_balcony) }}
+            </dd>
+          </div>
+          <div>
+            <dt>Parking</dt>
+            <dd [class.not-stated]="property.has_parking === null">
+              {{ amenityLabel(property.has_parking) }}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="card" aria-labelledby="source-heading">
+        <h2 id="source-heading" class="section-title card-title">About this analysis</h2>
+        <dl class="detail-list detail-list--single">
+          <div>
+            <dt>Analysis date</dt>
+            <dd>{{ analysis.created_at | date: 'd MMMM y, HH:mm' }}</dd>
+          </div>
+          <div>
+            <dt>Input</dt>
+            <dd>Entered manually</dd>
+          </div>
+          <div>
+            <dt>Estimate source</dt>
+            <dd [class.not-stated]="!hasEstimate">
+              {{ hasEstimate ? 'Regression model on sale listings' : 'No model available yet' }}
+            </dd>
+          </div>
+          <div>
+            <dt>Model version</dt>
+            <dd [class.not-stated]="!valuation.model_version">
+              {{ valuation.model_version ?? 'None' }}
+            </dd>
+          </div>
+        </dl>
+        <p class="snapshot-note">
+          This analysis keeps the details and results saved on
+          {{ analysis.created_at | date: 'd MMMM y' }}. A later model version will not change it.
+        </p>
+      </section>
+    </div>
+  }
+</section>

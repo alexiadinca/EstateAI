@@ -1,6 +1,7 @@
 // Global styles: design tokens, base typography and shared form styles.
 @use 'styles/tokens';
 @use 'styles/forms';
+@use 'styles/components';
 
 *,
 *::before,
